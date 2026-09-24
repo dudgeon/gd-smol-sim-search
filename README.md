@@ -11,8 +11,26 @@ cd gd-smol-sim-search
 ./setup.sh
 ```
 
-That's the whole install. Start a new Claude Code session in any project and ask something like *"find the notes
-where we discussed retry policies"*, *"which of these tickets are duplicates?"* or *"group these docs by theme"*.
+That's the whole install. Start a new Claude Code session in any project and ask; Claude picks up the skill on
+its own. It covers two kinds of question:
+
+**Search** — find things by meaning, not exact text:
+
+- "find the notes where we discussed retry policies"
+- "where in this repo do we talk about rate limiting?"
+- "which tickets mention being charged twice, however they phrased it?"
+
+**Similarity analysis** — characterise a dataset without a query:
+
+- "group the records in `data/feedback.csv` by theme and name the themes"
+- "which of these support tickets are duplicates of each other?"
+- "what are the outliers in this folder of meeting notes — anything unusual?"
+- "how similar are these two specs, and which sections overlap?"
+- "what else in the repo is most related to this file?"
+
+Works over Markdown, plain text, source code, CSV/TSV, JSON/JSONL (one record per item) and PDF. The worked
+workflows behind the analysis questions are in
+[`skills/semantic-search/references/recipes.md`](skills/semantic-search/references/recipes.md).
 
 ## Requirements
 
@@ -83,12 +101,21 @@ $SEM outliers --level file
 $SEM index tickets.jsonl --index tickets --text-field body.text --id-field id
 ```
 
-Every command takes `--json` (one JSON document on stdout, logs on stderr) and `--index NAME`. The full reference
-is in [`skills/semantic-search/references/cli.md`](skills/semantic-search/references/cli.md).
+For record data, pick the columns and id at index time — each row becomes one item, addressable in every result:
 
-Supported inputs: Markdown and text, source code, CSV/TSV, JSON and JSONL (one record per chunk, keeping its id)
-and PDF (per page). Binary files, `.git`, `node_modules`, virtualenvs and files over 50 MB are skipped, and
-`.gitignore` rules apply.
+```bash
+$SEM index data/feedback.csv --text-cols title,comment --id-col id
+$SEM cluster --level chunk --k auto      # cluster the records
+$SEM similar data/feedback.csv:2971      # neighbours of the record on line 2971
+```
+
+Every command takes `--json` (one JSON document on stdout, logs on stderr) and `--index NAME` (separate corpora,
+separate indexes). The full option reference is in
+[`skills/semantic-search/references/cli.md`](skills/semantic-search/references/cli.md); end-to-end analysis
+workflows are in [`references/recipes.md`](skills/semantic-search/references/recipes.md); reading cosine scores is
+covered in [`references/interpreting-scores.md`](skills/semantic-search/references/interpreting-scores.md).
+
+Binary files, `.git`, `node_modules`, virtualenvs and files over 50 MB are skipped, and `.gitignore` rules apply.
 
 ## Model
 

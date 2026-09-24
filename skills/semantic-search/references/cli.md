@@ -31,7 +31,10 @@ chunk of a long record). `heading` is the Markdown heading trail, when there is 
 
 - a `chunk_id` from any result,
 - an indexed **file path** (relative to the project, as shown in results). Its vector is the normalised mean of its chunk vectors,
-- `path:line`, meaning the chunk of that file covering the line.
+- `path:line`, meaning the chunk of that file covering that line. This also addresses one record of a CSV/JSONL
+  file: use the record's line number in the file (a CSV header is line 1, so the first data row is line 2).
+
+`rec:<id>` locators shown in results are labels, not lookup keys — address a record by `path:line` or `chunk_id`.
 
 ## `sem doctor [--full]`
 
@@ -51,7 +54,7 @@ deleted, or that are now excluded under a directory being indexed, are removed.
 | `--include GLOB` / `--exclude GLOB` | Repeatable. Matched against the project-relative path and the file name. |
 | `--text-field DOT.PATH` | JSON/JSONL: the field to embed (e.g. `body.text`). Default: all scalar fields as `key: value` lines. |
 | `--text-cols a,b` | CSV/TSV: columns to embed. Default: all columns as `col: value` lines. |
-| `--id-col NAME` / `--id-field NAME` | CSV column / JSON field used as the record id (default: row number). |
+| `--id-col NAME` / `--id-field NAME` | CSV column / JSON field used as the record id. Default: a column/field named `id`, `_id`, `ID`, `Id`, `uuid` or `key` if present, else the row number. |
 | `--chunk-tokens N` | Token budget per chunk (default 300; bge-small's limit is 512). |
 | `--overlap N` | Tokens of overlap between consecutive chunks (default 15%). |
 | `--rebuild` | Ignore existing state; required to change model, chunking or reader options. |
@@ -88,14 +91,16 @@ passages: "). Documents are embedded without one.
 
 ## `sem similar ITEM`
 
-Nearest neighbours of an item. It excludes the item itself (for a file, all of that file's chunks). Options: `-k`,
-`--path-glob`, `--group-by-file`.
+Nearest neighbours of an item. It excludes the item itself (for a file, all of that file's chunks). Options: `-k`
+(default 10), `--path-glob` (restrict where neighbours may come from), `--group-by-file` (best chunk per file —
+use it for "which *files* are related"). JSON output: `item`, `item_kind` (`chunk` or `file`), `results`.
 
 ## `sem compare A B [--text] [--pairs N]`
 
-Cosine similarity of two items. With `--text`, A and B are literal strings. For the model it uses the index's
-model if the index exists, otherwise `--model` or the default. For two files, it also returns
-`best_chunk_pairs`: the N most similar chunk pairs across the two files.
+Cosine similarity of two items. With `--text`, A and B are literal strings, both embedded as documents (no query
+prompt) — this needs no index and works before anything is indexed. For the model it uses the index's model if the
+index exists, otherwise `--model` or the default. For two files, it also returns `best_chunk_pairs`: the N most
+similar chunk pairs across the two files, which answer "where exactly do these overlap?".
 
 ## `sem dupes`
 
@@ -105,7 +110,7 @@ controls how many pairs are printed (default 50; `total_pairs` always has the fu
 
 ## `sem cluster`
 
-Spherical k-means (cosine, k-means++ init, best of 3 restarts).
+Spherical k-means (cosine, k-means++ init, best of 3 restarts). Deterministic for a given `--seed`.
 
 | Option | Meaning |
 |---|---|

@@ -34,9 +34,16 @@ install packages or copy models yourself. The fix is for the user to run
    has `ok` and `command`; on failure it has `error`.
 3. Use `--index <name>` to keep separate corpora apart (default `default`).
 
-Structured data: `--text-cols title,body --id-col id` for CSV/TSV, and
-`--text-field body.text --id-field id` for JSON/JSONL. Each record becomes its
-own chunk, and the id appears in the locator as `rec:<id>`.
+## 2a. Record data (CSV / TSV / JSONL / JSON arrays)
+
+Each row/record becomes one item. `--text-cols title,body` (CSV) or
+`--text-field body.text` (JSON) picks what gets embedded — prefer naming the
+text columns over the default of embedding every column. `--id-col` /
+`--id-field` sets the record id (a column named `id`, `_id`, `uuid` or `key`
+is picked up automatically); it appears in results as `rec:<id>`. Analyse
+records with `--level chunk`, and reference one record as `path:LINE` (its
+line number in the file) or by a `chunk_id` from any result — `rec:` ids are
+labels, not lookup keys.
 
 ## 3. Context discipline
 
@@ -59,8 +66,21 @@ dataset into context. `--snippet N` controls how much text each hit carries
 | start over / change model or chunking | `index --rebuild ...` · `drop <name>` |
 
 Items for `similar`/`compare` are a `chunk_id` (from any result), an indexed
-file path, or `path:line`. The full reference is in
-[references/cli.md](references/cli.md).
+file path, or `path:line`. Full option reference:
+[references/cli.md](references/cli.md). Worked analysis workflows (profiling a
+dataset, deduplicating, naming clusters, cross-corpus comparison):
+[references/recipes.md](references/recipes.md).
+
+## 4a. Analysis loop (no query needed)
+
+To characterise a dataset rather than search it, run in this order and
+summarise, instead of reading the corpus into context:
+
+1. `cluster --k auto` — the themes (read each cluster's `representatives` to
+   name it; a low-cohesion cluster is "everything else", not a theme),
+2. `dupes --across-files-only` — redundancy (`total_pairs` quantifies it),
+3. `outliers` — the unusual items worth opening by hand,
+4. `similar <chunk_id>` / `compare a b` — drill into anything interesting.
 
 ## 5. Reading scores
 
