@@ -1,6 +1,6 @@
 # Working on this repo
 
-This repo builds the `semantic-search` Claude Code skill: a local, offline embeddings CLI (`sem`) plus the installer
+This repo builds the `smol-sim-search` Claude Code skill: a local, offline embeddings CLI (`sem`) plus the installer
 (`setup.sh`). `README.md` is for users; this file is for whoever develops the repo.
 
 ## Layout
@@ -15,7 +15,7 @@ vendor/                          COMMITTED runtime for macOS arm64 (built by too
 tools/vendor.json                pins for the vendored files (exact file names, model revision)
 tools/build_vendor.py            downloads + verifies against upstream checksums, writes vendor/ (stdlib only)
 tools/requirements-dev.txt       pytest + the runtime packages, for running tests on any platform
-skills/semantic-search/
+skills/smol-sim-search/
   SKILL.md                       skill entry point (keep under ~150 lines; details go in references/)
   references/{cli,interpreting-scores}.md
   bin/sem                        bash wrapper: env + exec runtime/python/bin/python3 -P -s -m sem
@@ -81,7 +81,7 @@ uv venv .venv-dev --python 3.12 && uv pip install --python .venv-dev/bin/python 
   and token budgets.
 - `test_cli.py` and `test_units.py` use the hidden `hash-test` model (hashed bag-of-words): fast, no model files.
 - To check sandbox behaviour for real, run the acceptance checks from a Claude Code session with `/sandbox` on.
-  Use a before/after listing of `~/.claude/skills/semantic-search`, `~/.cache` and `~/Library/Caches`.
+  Use a before/after listing of `~/.claude/skills/smol-sim-search`, `~/.cache` and `~/Library/Caches`.
 
 ## Updating vendored files
 
@@ -111,5 +111,5 @@ test hooks: `SEM_REGISTRY` (alternate models.json), `SEM_MODELS_DIR` (alternate 
 - Built and tested in a Linux container (offline install/re-run/link/uninstall cycle in a no-network namespace;
   sandbox simulated with mount + network namespaces), then verified on a real Apple Silicon Mac (macOS 26):
   fresh offline install with passing self-test, all 53 tests, golden queries, and the write-isolation check
-  (before/after listings of `~/.claude/skills/semantic-search`, `~/.cache`, `~/Library/Caches`). That check is
+  (before/after listings of `~/.claude/skills/smol-sim-search`, `~/.cache`, `~/Library/Caches`). That check is
   what caught the onnxruntime telemetry above — keep running it after dependency bumps.

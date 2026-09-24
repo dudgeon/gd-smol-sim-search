@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# setup.sh — install the semantic-search skill for Claude Code.
+# setup.sh — install the smol-sim-search skill for Claude Code.
 #
 # Fully offline: everything it installs (Python, packages, model) is vendored in
 # this repo under vendor/ and checked against vendor/SHA256SUMS first. It never
@@ -16,10 +16,10 @@ MIN_MACOS_MAJOR=14   # the vendored onnxruntime and numpy wheels are macosx_14_0
 
 # --- paths ------------------------------------------------------------------------
 REPO_DIR="$(cd -P "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SKILL_SRC="$REPO_DIR/skills/semantic-search"
+SKILL_SRC="$REPO_DIR/skills/smol-sim-search"
 SKILLS_HOME="${CLAUDE_SKILLS_DIR:-$HOME/.claude/skills}"
-SKILL_DEST="$SKILLS_HOME/semantic-search"
-LINK_RUNTIME_DEFAULT="${XDG_DATA_HOME:-$HOME/.local/share}/semantic-search/runtime"
+SKILL_DEST="$SKILLS_HOME/smol-sim-search"
+LINK_RUNTIME_DEFAULT="${XDG_DATA_HOME:-$HOME/.local/share}/smol-sim-search/runtime"
 VENDOR="${SEM_SETUP_VENDOR_DIR:-$REPO_DIR/vendor}"
 
 # --- args -------------------------------------------------------------------------
@@ -94,7 +94,7 @@ elif [ "${SEM_SETUP_ALLOW_LINUX:-}" = 1 ] && [ "$OS" = "Linux" ] && [ "$ARCH" = 
   HOST_PLATFORM="linux-x86_64"
   warn "Linux dev mode (SEM_SETUP_ALLOW_LINUX=1): unsupported for real use"
 else
-  die "semantic-search supports macOS on Apple Silicon only (found $OS $ARCH)."
+  die "smol-sim-search supports macOS on Apple Silicon only (found $OS $ARCH)."
 fi
 if command -v shasum >/dev/null 2>&1; then SHA256="shasum -a 256"
 elif command -v sha256sum >/dev/null 2>&1; then SHA256="sha256sum"
@@ -213,7 +213,7 @@ if [ "$MODE" = link ]; then
   ok "linked $SKILL_DEST -> $SKILL_SRC"
 else
   # the stage lives next to (not inside) the skills dir so Claude Code never sees it as a skill
-  STAGE="$(mktemp -d "$(dirname "$SKILLS_HOME")/.semantic-search-stage.XXXXXX")"
+  STAGE="$(mktemp -d "$(dirname "$SKILLS_HOME")/.smol-sim-search-stage.XXXXXX")"
   chmod 0755 "$STAGE"
   cleanup_stage() { rm -rf "$STAGE"; }
   trap cleanup_stage EXIT
@@ -235,7 +235,7 @@ else
   else
     # carry the runtime over when it lives inside the skill dir
     if [ -d "$SKILL_DEST/runtime" ] && [ ! -L "$SKILL_DEST" ]; then mv "$SKILL_DEST/runtime" "$STAGE/runtime"; fi
-    OLD="$(dirname "$SKILLS_HOME")/.semantic-search-old.$$"
+    OLD="$(dirname "$SKILLS_HOME")/.smol-sim-search-old.$$"
     if [ -L "$SKILL_DEST" ]; then rm -f "$SKILL_DEST";
     elif [ -e "$SKILL_DEST" ]; then mv "$SKILL_DEST" "$OLD"; fi
     mv "$STAGE" "$SKILL_DEST"
@@ -319,7 +319,7 @@ fi
 # --- 9. next steps ----------------------------------------------------------------
 cat <<EOF
 
-${G}${B}semantic-search is installed.${N}
+${G}${B}smol-sim-search is installed.${N}
 
   Skill:    $SKILL_DEST
   Runtime:  $RUNTIME_DIR

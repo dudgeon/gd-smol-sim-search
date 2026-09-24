@@ -3,7 +3,7 @@ __pycache__/
 .pytest_cache/
 .sem/
 # written by ./setup.sh --link --runtime-dir <dir>
-skills/semantic-search/.runtime-path
+skills/smol-sim-search/.runtime-path
 # never commit a runtime (venv, Python, model weights) into the repo
 runtime/
 .venv-dev/

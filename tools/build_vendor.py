@@ -28,7 +28,7 @@ CONFIG = REPO / "tools" / "vendor.json"
 
 
 def fetch(url: str, attempts: int = 4) -> bytes:
-    req = urllib.request.Request(url, headers={"User-Agent": "semantic-search-build-vendor"})
+    req = urllib.request.Request(url, headers={"User-Agent": "smol-sim-search-build-vendor"})
     for n in range(attempts):
         try:
             with urllib.request.urlopen(req, timeout=300) as r:

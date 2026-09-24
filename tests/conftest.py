@@ -10,7 +10,7 @@ from pathlib import Path
 import pytest
 
 REPO = Path(__file__).resolve().parent.parent
-SKILL = REPO / "skills" / "semantic-search"
+SKILL = REPO / "skills" / "smol-sim-search"
 FIXTURES = REPO / "tests" / "fixtures"
 sys.path.insert(0, str(SKILL))
 sys.path.insert(0, str(REPO / "tests"))

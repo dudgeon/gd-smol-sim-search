@@ -1,9 +1,9 @@
 ---
-name: semantic-search
+name: smol-sim-search
 description: Local semantic search and similarity analysis over any dataset in the current project — documents, code, notes, CSV/JSONL records, PDFs. Use this whenever the user wants to find things by meaning rather than exact text, search a large corpus that won't fit in context, find related or similar files or records, detect near-duplicates, group or cluster items by theme, find outliers, or compare how similar two things are. Runs fully offline inside the Claude Code sandbox.
 ---
 
-# semantic-search
+# smol-sim-search
 
 `sem` embeds files in the current project with a local model and answers
 questions about meaning: search, nearest neighbours, pairwise similarity,
@@ -13,7 +13,7 @@ writes only to `./.sem/` in the current directory.
 Run it by its full path inside this skill's directory:
 
 ```bash
-SEM="<this skill's base directory>/bin/sem"   # e.g. ~/.claude/skills/semantic-search/bin/sem
+SEM="<this skill's base directory>/bin/sem"   # e.g. ~/.claude/skills/smol-sim-search/bin/sem
 "$SEM" doctor
 ```
 

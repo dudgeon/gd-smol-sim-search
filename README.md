@@ -1,9 +1,15 @@
-# semantic-search: local embeddings for Claude Code, inside the sandbox
+<div align="center">
+  <img src="assets/logo.svg" width="250" alt="Clawd the crab in a sandbox, holding a magnifying glass">
+  <h1>smol-sim-search</h1>
+  <p><strong>A crab-sized search engine that never leaves the sandbox.</strong><br>
+  Local embeddings for Claude Code — simple, lightweight, zero external dependencies.</p>
+  <p><sub>stays in the sandbox &nbsp;·&nbsp; nothing to download &nbsp;·&nbsp; pail included</sub></p>
+</div>
 
 A [Claude Code skill](https://code.claude.com/docs/en/skills) that lets Claude embed a local dataset and work with
 meaning instead of exact text: semantic search, nearest neighbours, pairwise comparison, near-duplicates, clusters
-and outliers. Claude does the summarising; `sem` finds the relevant pieces. Everything runs **in-process and
-offline** on your Mac. There are no servers, API keys, or network access, **including during install**.
+and outliers. Claude does the summarising; the `sem` CLI finds the relevant pieces. Everything runs **in-process
+and offline** on your Mac. There are no servers, API keys, or network access, **including during install**.
 
 ```bash
 git clone https://github.com/dudgeon/gd-smol-sim-search
@@ -30,7 +36,7 @@ its own. It covers two kinds of question:
 
 Works over Markdown, plain text, source code, CSV/TSV, JSON/JSONL (one record per item) and PDF. The worked
 workflows behind the analysis questions are in
-[`skills/semantic-search/references/recipes.md`](skills/semantic-search/references/recipes.md).
+[`skills/smol-sim-search/references/recipes.md`](skills/smol-sim-search/references/recipes.md).
 
 ## Requirements
 
@@ -60,7 +66,7 @@ file. The repo contains no Git LFS files, so a plain `git clone` gets everything
 3. Installs the four wheels with `pip --no-index --no-deps` (no package index, no dependency resolution).
 4. Joins the model pieces and checks the result against **Hugging Face's published SHA-256**.
 5. Precompiles bytecode, because the runtime and skill directories are read-only at runtime.
-6. Copies the skill to `~/.claude/skills/semantic-search/`, replacing any existing copy in one swap.
+6. Copies the skill to `~/.claude/skills/smol-sim-search/`, replacing any existing copy in one swap.
 7. Runs a self-test: indexes the test fixtures, runs a search, and checks the results.
 
 Re-running it only verifies what's installed. It doesn't modify `~/.claude/settings.json` or any sandbox settings.
@@ -68,7 +74,7 @@ Re-running it only verifies what's installed. It doesn't modify `~/.claude/setti
 | Flag | Effect |
 |---|---|
 | `--update` | Reinstall the runtime and skill files from `vendor/` (e.g. after `git pull`). |
-| `--link` | Dev mode: symlink the skill to this repo. The runtime goes to `~/.local/share/semantic-search/runtime`. |
+| `--link` | Dev mode: symlink the skill to this repo. The runtime goes to `~/.local/share/smol-sim-search/runtime`. |
 | `--runtime-dir DIR` | Put the runtime (Python, packages, model) somewhere else. |
 | `--uninstall [--yes]` | Remove the skill and runtime after confirmation. Project `./.sem/` folders are left alone. |
 
@@ -89,7 +95,7 @@ elsewhere.
 Claude runs it for you, but `sem` also works on its own:
 
 ```bash
-SEM=~/.claude/skills/semantic-search/bin/sem
+SEM=~/.claude/skills/smol-sim-search/bin/sem
 $SEM doctor
 $SEM index docs/ src/                        # incremental: only changed files are re-embedded
 $SEM search "how do we retry failed uploads" -k 5
@@ -111,9 +117,9 @@ $SEM similar data/feedback.csv:2971      # neighbours of the record on line 2971
 
 Every command takes `--json` (one JSON document on stdout, logs on stderr) and `--index NAME` (separate corpora,
 separate indexes). The full option reference is in
-[`skills/semantic-search/references/cli.md`](skills/semantic-search/references/cli.md); end-to-end analysis
-workflows are in [`references/recipes.md`](skills/semantic-search/references/recipes.md); reading cosine scores is
-covered in [`references/interpreting-scores.md`](skills/semantic-search/references/interpreting-scores.md).
+[`skills/smol-sim-search/references/cli.md`](skills/smol-sim-search/references/cli.md); end-to-end analysis
+workflows are in [`references/recipes.md`](skills/smol-sim-search/references/recipes.md); reading cosine scores is
+covered in [`references/interpreting-scores.md`](skills/smol-sim-search/references/interpreting-scores.md).
 
 Binary files, `.git`, `node_modules`, virtualenvs and files over 50 MB are skipped, and `.gitignore` rules apply.
 
@@ -122,7 +128,7 @@ Binary files, `.git`, `node_modules`, virtualenvs and files over 50 MB are skipp
 **bge-small-en-v1.5** (384 dimensions, MIT), English. It is fast on CPU and well suited to short entries: records,
 notes, tickets, paragraphs. Long documents are split into chunks of up to 300 tokens (the model's limit is 512).
 The model and its revision are part of every index's identity; `sem` refuses to mix indexes built with different
-models. See [`references/interpreting-scores.md`](skills/semantic-search/references/interpreting-scores.md) for
+models. See [`references/interpreting-scores.md`](skills/smol-sim-search/references/interpreting-scores.md) for
 reading scores.
 
 This ONNX Runtime setup produces the same vectors as the sentence-transformers/PyTorch reference implementation
@@ -157,9 +163,9 @@ left alone; delete them if you like.
 
 ## Open questions
 
-- **Runtime location.** The default stays at `~/.claude/skills/semantic-search/runtime/`. Skill discovery only
+- **Runtime location.** The default stays at `~/.claude/skills/smol-sim-search/runtime/`. Skill discovery only
   reads each skill's `SKILL.md`, so the runtime's size shouldn't matter, but that hasn't been measured. If it does,
-  use `--runtime-dir ~/.local/share/semantic-search/runtime`.
+  use `--runtime-dir ~/.local/share/smol-sim-search/runtime`.
 - **Chunking.** Tuned for short English entries for now. A dedicated chunking strategy for long documents is a
   planned follow-up.
 

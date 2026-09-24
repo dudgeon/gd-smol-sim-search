@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# sem — wrapper for the semantic-search skill.
+# sem — wrapper for the smol-sim-search skill.
 #
 # Sets up an environment in which every write (indexes, caches, temp files)
 # lands in ./.sem of the current directory and nothing touches the network,
@@ -21,11 +21,11 @@ for cand in \
     "${SEM_RUNTIME:-}" \
     "$SKILL_DIR/runtime" \
     "$( [ -f "$SKILL_DIR/.runtime-path" ] && cat "$SKILL_DIR/.runtime-path" || true)" \
-    "${XDG_DATA_HOME:-$HOME/.local/share}/semantic-search/runtime"; do
+    "${XDG_DATA_HOME:-$HOME/.local/share}/smol-sim-search/runtime"; do
   if [ -n "$cand" ] && [ -f "$cand/install.json" ]; then runtime="$cand"; break; fi
 done
 if [ -z "$runtime" ]; then
-  echo "sem: runtime not found. Run ./setup.sh from the semantic-search repo in your own terminal." >&2
+  echo "sem: runtime not found. Run ./setup.sh from the smol-sim-search repo in your own terminal." >&2
   exit 3
 fi
 PY="$runtime/python/bin/python3"

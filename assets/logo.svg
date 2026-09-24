@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 264 204" role="img" aria-label="smol-sim-search: Clawd the crab in a sandbox, holding a magnifying glass">
+  <!-- cream tile so the dark linework reads on both GitHub themes -->
+  <rect x="0" y="0" width="264" height="204" rx="24" fill="#F6EFE4"/>
+  <g transform="translate(12,12)">
+    <!-- magnifying glass held up -->
+    <circle cx="176" cy="52" r="22" fill="#D8EAF2"/>
+    <g stroke="#2E2A26" fill="none" stroke-linecap="round">
+      <circle cx="176" cy="52" r="22" stroke-width="6.5"/>
+      <line x1="161" y1="68" x2="144" y2="86" stroke-width="8.5"/>
+    </g>
+    <path d="M163 42 A17 17 0 0 1 173 36" stroke="#fff" stroke-width="4" fill="none" stroke-linecap="round" opacity=".85"/>
+    <circle cx="171" cy="50" r="3.6" fill="#D97757"/>
+    <circle cx="182" cy="56" r="3" fill="#3E8E8C"/>
+    <!-- arms + claws -->
+    <g stroke="#B85C43" stroke-width="8" fill="none" stroke-linecap="round">
+      <path d="M138 102 C140 98 142 94 145 90"/>
+      <path d="M82 102 C74 96 68 90 66 82"/>
+    </g>
+    <path d="M156.9 83.7 A11.5 11.5 0 1 1 148.8 75.6 L146 87 Z" fill="#D97757"/>
+    <path d="M76.3 65.4 A13 13 0 1 1 67.5 56.9 L64 70 Z" fill="#D97757"/>
+    <!-- body -->
+    <ellipse cx="110" cy="110" rx="40" ry="30" fill="#D97757"/>
+    <g stroke="#2E2A26" stroke-width="4" fill="none" stroke-linecap="round">
+      <path d="M98 86 C97 79 95 75 92 71"/>
+      <path d="M122 86 C123 79 125 75 128 71"/>
+    </g>
+    <circle cx="91" cy="65" r="8.5" fill="#FFF8F0" stroke="#2E2A26" stroke-width="3.2"/>
+    <circle cx="129" cy="65" r="8.5" fill="#FFF8F0" stroke="#2E2A26" stroke-width="3.2"/>
+    <circle cx="93" cy="66.5" r="3.4" fill="#2E2A26"/>
+    <circle cx="127" cy="66.5" r="3.4" fill="#2E2A26"/>
+    <path d="M102 114 Q110 122 118 114" stroke="#2E2A26" stroke-width="4" fill="none" stroke-linecap="round"/>
+    <circle cx="90" cy="117" r="4.6" fill="#E9967E" opacity=".8"/>
+    <circle cx="130" cy="117" r="4.6" fill="#E9967E" opacity=".8"/>
+    <!-- sandbox -->
+    <ellipse cx="120" cy="132" rx="72" ry="13" fill="#EFD9A7"/>
+    <ellipse cx="120" cy="132" rx="72" ry="13" fill="none" stroke="#00000014" stroke-width="1"/>
+    <!-- pail -->
+    <path d="M186 104 L206 104 L202 128 L190 128 Z" fill="#3E8E8C"/>
+    <path d="M188 104 A8 8 0 0 1 204 104" fill="none" stroke="#2E2A26" stroke-width="2.6"/>
+    <!-- starfish -->
+    <path d="M52 118 l3.2 6.6 7.2 .9 -5.3 5 1.4 7.1 -6.5 -3.5 -6.5 3.5 1.4 -7.1 -5.3 -5 7.2 -.9 Z" fill="#D9A441"/>
+    <!-- frame -->
+    <rect x="34" y="128" width="172" height="24" rx="5" fill="#C89B6B"/>
+    <rect x="34" y="128" width="172" height="7" rx="3.5" fill="#B3865A"/>
+  </g>
+</svg>

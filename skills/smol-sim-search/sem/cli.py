@@ -78,7 +78,7 @@ def cmd_doctor(ctx: Ctx) -> tuple[dict, str, int]:
     info = load_install_info(paths)
     rt = paths.runtime
     if not rt or not rt.exists():
-        problems.append("runtime not found; run ./setup.sh from the semantic-search repo in your terminal")
+        problems.append("runtime not found; run ./setup.sh from the smol-sim-search repo in your terminal")
     elif not info:
         problems.append(f"runtime at {rt} has no install.json; re-run ./setup.sh")
 

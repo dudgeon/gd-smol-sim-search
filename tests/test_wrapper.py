@@ -47,7 +47,7 @@ def test_wrapper_sets_project_local_env(tmp_path, fake_runtime):
 
 
 def test_wrapper_follows_symlinks(tmp_path, fake_runtime):
-    link = tmp_path / "skills" / "semantic-search"
+    link = tmp_path / "skills" / "smol-sim-search"
     link.parent.mkdir()
     link.symlink_to(SKILL)
     proj = tmp_path / "p"

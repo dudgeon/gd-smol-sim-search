@@ -1,0 +1,358 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>semantic-search — logo &amp; README mockups</title>
+<style>
+  :root{
+    --coral:#D97757; --coral-dark:#B85C43; --ink:#2E2A26; --cream:#F6EFE4;
+    --teal:#3E8E8C; --gold:#D9A441; --glass:#D8EAF2;
+    --page:#F2EFE9; --card:#FFFFFF; --line:#E2DDD3; --muted:#7A736A;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--page);color:var(--ink);
+       font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;padding:48px 24px 96px}
+  .wrap{max-width:1080px;margin:0 auto}
+  h1{font-size:26px;margin:0 0 4px}
+  .sub{color:var(--muted);margin:0 0 40px}
+  h2{font-size:18px;margin:56px 0 16px;border-bottom:1px solid var(--line);padding-bottom:8px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:24px;text-align:center}
+  .card .art{display:flex;align-items:center;justify-content:center;height:220px}
+  .card h3{font-size:15px;margin:14px 0 4px}
+  .card p{font-size:13px;color:var(--muted);margin:0}
+  .scale-row{display:flex;align-items:flex-end;gap:28px;justify-content:center;flex-wrap:wrap;
+             background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px}
+  .scale-row .cell{text-align:center}
+  .scale-row .lbl{font-size:11px;color:var(--muted);margin-top:6px}
+  .darkcheck{background:#161B22;border-radius:12px;padding:20px;display:flex;gap:28px;justify-content:center;align-items:center;flex-wrap:wrap}
+  /* README frames */
+  .readme{border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:28px;box-shadow:0 1px 3px #0000000d}
+  .readme .bar{display:flex;gap:6px;padding:10px 14px;border-bottom:1px solid #00000012;background:#FAF8F4}
+  .readme .bar i{width:11px;height:11px;border-radius:50%;background:#D9D4CA;display:block}
+  .readme .body{padding:40px 48px 36px;background:#ffffff}
+  .readme.dark .bar{background:#21262d;border-color:#ffffff14}
+  .readme.dark .bar i{background:#3a4048}
+  .readme.dark .body{background:#0d1117;color:#e6edf3}
+  .rm-center{text-align:center}
+  .rm-title{font-size:34px;font-weight:700;letter-spacing:-.5px;margin:18px 0 6px}
+  .rm-title.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:0}
+  .rm-tag{font-size:16.5px;color:#57534B;max-width:560px;margin:0 auto 18px}
+  .readme.dark .rm-tag{color:#9aa4af}
+  .pills{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:0 0 26px}
+  .pill{font-size:12px;font-weight:600;padding:4px 11px;border-radius:999px;background:#F3EEE5;color:#6B6459;border:1px solid #E5DECF}
+  .pill.hi{background:var(--coral);border-color:var(--coral);color:#fff}
+  .readme.dark .pill{background:#1c232b;border-color:#30363d;color:#9aa4af}
+  .readme.dark .pill.hi{background:var(--coral);border-color:var(--coral);color:#fff}
+  .rm-code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;text-align:left;
+           background:#F6F3EC;border:1px solid #E7E1D4;border-radius:8px;padding:14px 18px;max-width:520px;margin:0 auto;color:#4c463d}
+  .readme.dark .rm-code{background:#161b22;border-color:#30363d;color:#c9d1d9}
+  .rm-row{display:flex;align-items:center;gap:28px;text-align:left}
+  .rm-row .rm-tag{margin:0}
+  .cap{font-size:13px;color:var(--muted);margin:-16px 0 40px;text-align:left}
+  .cap b{color:var(--ink)}
+  .tile{background:var(--cream);border-radius:20px;padding:14px;display:inline-flex}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- ============ SVG symbol definitions ============ -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+
+  <!-- LOGO 1: Clawd holding a magnifying glass -->
+  <symbol id="logo-a" viewBox="0 0 240 210">
+    <!-- shadow -->
+    <ellipse cx="112" cy="192" rx="52" ry="8" fill="#000" opacity=".08"/>
+    <!-- magnifying glass -->
+    <circle cx="178" cy="54" r="30" fill="var(--glass,#D8EAF2)"/>
+    <g stroke="#2E2A26" fill="none" stroke-linecap="round">
+      <circle cx="178" cy="54" r="30" stroke-width="8"/>
+      <line x1="158" y1="76" x2="149" y2="90" stroke-width="10"/>
+    </g>
+    <path d="M160 40 A24 24 0 0 1 174 32" stroke="#fff" stroke-width="5" fill="none" stroke-linecap="round" opacity=".85"/>
+    <!-- dots inside the lens -->
+    <g stroke="#ffffff" stroke-width="2" opacity=".7">
+      <line x1="169" y1="51" x2="184" y2="58"/><line x1="184" y1="58" x2="176" y2="67"/>
+    </g>
+    <circle cx="169" cy="51" r="5" fill="#D97757"/>
+    <circle cx="185" cy="58" r="4.2" fill="#3E8E8C"/>
+    <circle cx="176" cy="68" r="3.6" fill="#D9A441"/>
+    <!-- legs -->
+    <g stroke="#B85C43" stroke-width="6" fill="none" stroke-linecap="round">
+      <path d="M64 152 C52 158 46 166 42 176"/>
+      <path d="M68 162 C58 170 54 178 52 186"/>
+      <path d="M156 152 C168 158 174 166 178 176"/>
+      <path d="M152 162 C162 170 166 178 168 186"/>
+    </g>
+    <!-- arms -->
+    <g stroke="#B85C43" stroke-width="10" fill="none" stroke-linecap="round">
+      <path d="M70 120 C56 110 48 102 46 90"/>
+    </g>
+    <!-- left claw: raised, open pincer -->
+    <path d="M60.3 71 A17 17 0 1 1 49 59.7 L44 76 Z" fill="#D97757"/>
+    <!-- body -->
+    <ellipse cx="110" cy="138" rx="54" ry="38" fill="#D97757"/>
+    <path d="M58 148 A54 30 0 0 0 162 148 A54 38 0 0 1 56 138 Z" fill="#C2664A" opacity=".55"/>
+    <!-- right arm + claw gripping the handle (over the body) -->
+    <path d="M142 118 C146 111 148 104 150 97" stroke="#B85C43" stroke-width="10" fill="none" stroke-linecap="round"/>
+    <path d="M164.4 90 A13 13 0 1 1 153.8 81.1 L152 94 Z" fill="#D97757"/>
+    <!-- eye stalks -->
+    <g stroke="#2E2A26" stroke-width="5" fill="none" stroke-linecap="round">
+      <path d="M94 106 C92 96 90 90 86 84"/>
+      <path d="M126 106 C128 96 130 90 134 84"/>
+    </g>
+    <circle cx="84" cy="76" r="11" fill="#FFF8F0" stroke="#2E2A26" stroke-width="4"/>
+    <circle cx="136" cy="76" r="11" fill="#FFF8F0" stroke="#2E2A26" stroke-width="4"/>
+    <circle cx="86.5" cy="78" r="4.4" fill="#2E2A26"/>
+    <circle cx="133.5" cy="78" r="4.4" fill="#2E2A26"/>
+    <circle cx="88" cy="76" r="1.5" fill="#fff"/>
+    <circle cx="135" cy="76" r="1.5" fill="#fff"/>
+    <!-- face -->
+    <path d="M100 142 Q110 152 120 142" stroke="#2E2A26" stroke-width="5" fill="none" stroke-linecap="round"/>
+    <circle cx="84" cy="146" r="6" fill="#E9967E" opacity=".8"/>
+    <circle cx="136" cy="146" r="6" fill="#E9967E" opacity=".8"/>
+  </symbol>
+
+  <!-- LOGO 2: minimal mark — claw-gripped lens over a tiny semantic graph -->
+  <symbol id="logo-b" viewBox="0 0 120 120">
+    <circle cx="50" cy="50" r="32" fill="#EAF3F7"/>
+    <g stroke="#9FB4BC" stroke-width="2.5">
+      <line x1="40" y1="44" x2="60" y2="38"/><line x1="60" y1="38" x2="52" y2="62"/><line x1="52" y1="62" x2="40" y2="44"/>
+    </g>
+    <circle cx="40" cy="44" r="5.5" fill="#D97757"/>
+    <circle cx="60" cy="38" r="5" fill="#3E8E8C"/>
+    <circle cx="52" cy="62" r="5" fill="#D9A441"/>
+    <circle cx="50" cy="50" r="32" fill="none" stroke="#2E2A26" stroke-width="9"/>
+    <line x1="73" y1="73" x2="87" y2="87" stroke="#2E2A26" stroke-width="12" stroke-linecap="round"/>
+    <path d="M93.7 81.2 A15 15 0 1 1 81.2 93.7 L96 96 Z" fill="#D97757"/>
+  </symbol>
+
+  <!-- LOGO 3: clusters + lens, tiny crab (light) -->
+  <symbol id="logo-c" viewBox="0 0 240 160">
+    <g fill="#D9A441">
+      <circle cx="182" cy="32" r="4"/><circle cx="196" cy="26" r="3.4"/>
+      <circle cx="192" cy="44" r="4.6"/><circle cx="206" cy="38" r="3"/>
+    </g>
+    <g fill="#3E8E8C">
+      <circle cx="190" cy="106" r="4"/><circle cx="204" cy="100" r="4.6"/>
+      <circle cx="198" cy="120" r="3.6"/><circle cx="212" cy="112" r="3"/>
+    </g>
+    <g stroke="#00000022" stroke-width="1.6">
+      <line x1="182" y1="32" x2="192" y2="44"/><line x1="196" y1="26" x2="206" y2="38"/>
+      <line x1="190" y1="106" x2="204" y2="100"/><line x1="204" y1="100" x2="212" y2="112"/>
+    </g>
+    <circle cx="80" cy="72" r="34" fill="#D8EAF2" opacity=".8"/>
+    <g stroke="#00000022" stroke-width="1.6">
+      <line x1="70" y1="64" x2="88" y2="58"/><line x1="88" y1="58" x2="94" y2="76"/>
+      <line x1="70" y1="64" x2="78" y2="82"/><line x1="78" y1="82" x2="94" y2="76"/>
+    </g>
+    <g fill="#D97757">
+      <circle cx="70" cy="64" r="5.4"/><circle cx="88" cy="58" r="4.8"/>
+      <circle cx="78" cy="82" r="5.4"/><circle cx="94" cy="76" r="4.4"/><circle cx="62" cy="78" r="3.8"/>
+    </g>
+    <circle cx="80" cy="72" r="34" fill="none" stroke="#2E2A26" stroke-width="7"/>
+    <line x1="104" y1="96" x2="122" y2="114" stroke="#2E2A26" stroke-width="10" stroke-linecap="round"/>
+    <!-- tiny crab -->
+    <g>
+      <ellipse cx="38" cy="140" rx="15" ry="10" fill="#D97757"/>
+      <circle cx="20" cy="136" r="5" fill="#D97757"/>
+      <circle cx="56" cy="136" r="5" fill="#D97757"/>
+      <circle cx="33" cy="132" r="2" fill="#2E2A26"/>
+      <circle cx="43" cy="132" r="2" fill="#2E2A26"/>
+    </g>
+  </symbol>
+
+  <!-- LOGO 3 dark variant -->
+  <symbol id="logo-c-dark" viewBox="0 0 240 160">
+    <g fill="#D9A441">
+      <circle cx="182" cy="32" r="4"/><circle cx="196" cy="26" r="3.4"/>
+      <circle cx="192" cy="44" r="4.6"/><circle cx="206" cy="38" r="3"/>
+    </g>
+    <g fill="#4FB3B0">
+      <circle cx="190" cy="106" r="4"/><circle cx="204" cy="100" r="4.6"/>
+      <circle cx="198" cy="120" r="3.6"/><circle cx="212" cy="112" r="3"/>
+    </g>
+    <g stroke="#ffffff2e" stroke-width="1.6">
+      <line x1="182" y1="32" x2="192" y2="44"/><line x1="196" y1="26" x2="206" y2="38"/>
+      <line x1="190" y1="106" x2="204" y2="100"/><line x1="204" y1="100" x2="212" y2="112"/>
+    </g>
+    <circle cx="80" cy="72" r="34" fill="#22313B" opacity=".9"/>
+    <g stroke="#ffffff2e" stroke-width="1.6">
+      <line x1="70" y1="64" x2="88" y2="58"/><line x1="88" y1="58" x2="94" y2="76"/>
+      <line x1="70" y1="64" x2="78" y2="82"/><line x1="78" y1="82" x2="94" y2="76"/>
+    </g>
+    <g fill="#E8825F">
+      <circle cx="70" cy="64" r="5.4"/><circle cx="88" cy="58" r="4.8"/>
+      <circle cx="78" cy="82" r="5.4"/><circle cx="94" cy="76" r="4.4"/><circle cx="62" cy="78" r="3.8"/>
+    </g>
+    <circle cx="80" cy="72" r="34" fill="none" stroke="#E8E2D9" stroke-width="7"/>
+    <line x1="104" y1="96" x2="122" y2="114" stroke="#E8E2D9" stroke-width="10" stroke-linecap="round"/>
+    <g>
+      <ellipse cx="38" cy="140" rx="15" ry="10" fill="#E8825F"/>
+      <circle cx="20" cy="136" r="5" fill="#E8825F"/>
+      <circle cx="56" cy="136" r="5" fill="#E8825F"/>
+      <circle cx="33" cy="132" r="2" fill="#14181d"/>
+      <circle cx="43" cy="132" r="2" fill="#14181d"/>
+    </g>
+  </symbol>
+
+  <!-- LOGO 4: Clawd in the sandbox -->
+  <symbol id="logo-d" viewBox="0 0 240 180">
+    <!-- magnifying glass held up -->
+    <circle cx="176" cy="52" r="22" fill="#D8EAF2"/>
+    <g stroke="#2E2A26" fill="none" stroke-linecap="round">
+      <circle cx="176" cy="52" r="22" stroke-width="6.5"/>
+      <line x1="161" y1="68" x2="144" y2="86" stroke-width="8.5"/>
+    </g>
+    <path d="M163 42 A17 17 0 0 1 173 36" stroke="#fff" stroke-width="4" fill="none" stroke-linecap="round" opacity=".85"/>
+    <circle cx="171" cy="50" r="3.6" fill="#D97757"/>
+    <circle cx="182" cy="56" r="3" fill="#3E8E8C"/>
+    <!-- arms + claws -->
+    <g stroke="#B85C43" stroke-width="8" fill="none" stroke-linecap="round">
+      <path d="M138 102 C140 98 142 94 145 90"/>
+      <path d="M82 102 C74 96 68 90 66 82"/>
+    </g>
+    <path d="M156.9 83.7 A11.5 11.5 0 1 1 148.8 75.6 L146 87 Z" fill="#D97757"/>
+    <path d="M76.3 65.4 A13 13 0 1 1 67.5 56.9 L64 70 Z" fill="#D97757"/>
+    <!-- body -->
+    <ellipse cx="110" cy="110" rx="40" ry="30" fill="#D97757"/>
+    <g stroke="#2E2A26" stroke-width="4" fill="none" stroke-linecap="round">
+      <path d="M98 86 C97 79 95 75 92 71"/>
+      <path d="M122 86 C123 79 125 75 128 71"/>
+    </g>
+    <circle cx="91" cy="65" r="8.5" fill="#FFF8F0" stroke="#2E2A26" stroke-width="3.2"/>
+    <circle cx="129" cy="65" r="8.5" fill="#FFF8F0" stroke="#2E2A26" stroke-width="3.2"/>
+    <circle cx="93" cy="66.5" r="3.4" fill="#2E2A26"/>
+    <circle cx="127" cy="66.5" r="3.4" fill="#2E2A26"/>
+    <path d="M102 114 Q110 122 118 114" stroke="#2E2A26" stroke-width="4" fill="none" stroke-linecap="round"/>
+    <circle cx="90" cy="117" r="4.6" fill="#E9967E" opacity=".8"/>
+    <circle cx="130" cy="117" r="4.6" fill="#E9967E" opacity=".8"/>
+    <!-- sandbox -->
+    <ellipse cx="120" cy="132" rx="72" ry="13" fill="#EFD9A7"/>
+    <ellipse cx="120" cy="132" rx="72" ry="13" fill="none" stroke="#00000014" stroke-width="1"/>
+    <!-- pail -->
+    <path d="M186 104 L206 104 L202 128 L190 128 Z" fill="#3E8E8C"/>
+    <path d="M188 104 A8 8 0 0 1 204 104" fill="none" stroke="#2E2A26" stroke-width="2.6"/>
+    <!-- starfish -->
+    <path d="M52 118 l3.2 6.6 7.2 .9 -5.3 5 1.4 7.1 -6.5 -3.5 -6.5 3.5 1.4 -7.1 -5.3 -5 7.2 -.9 Z" fill="#D9A441"/>
+    <!-- frame -->
+    <rect x="34" y="128" width="172" height="24" rx="5" fill="#C89B6B"/>
+    <rect x="34" y="128" width="172" height="7" rx="3.5" fill="#B3865A"/>
+  </symbol>
+
+  </defs>
+</svg>
+
+<h1>semantic-search — logo &amp; README header mockups</h1>
+<p class="sub">Local, offline semantic search Claude runs inside the sandbox · four logo directions, four header treatments</p>
+
+<h2>Logos</h2>
+<div class="grid">
+  <div class="card">
+    <div class="art"><svg width="210" height="190"><use href="#logo-a"/></svg></div>
+    <h3>Logo 1 — Clawd, searching</h3>
+    <p>The mascot: a crab holding a magnifying glass, embedding dots in the lens. Friendly hero image for a README.</p>
+  </div>
+  <div class="card">
+    <div class="art"><svg width="150" height="150"><use href="#logo-b"/></svg></div>
+    <h3>Logo 2 — the mark</h3>
+    <p>Geometric: a claw gripping the lens, a tiny semantic graph inside. Reads at favicon size.</p>
+  </div>
+  <div class="card">
+    <div class="art"><svg width="260" height="180"><use href="#logo-c"/></svg></div>
+    <h3>Logo 3 — clusters under the lens</h3>
+    <p>The concept: embedding clusters, one under inspection. Crab as a signature, not the subject.</p>
+  </div>
+  <div class="card">
+    <div class="art"><svg width="240" height="180"><use href="#logo-d"/></svg></div>
+    <h3>Logo 4 — in the sandbox</h3>
+    <p>The constraint as the joke: Clawd never leaves the sandbox. Pail included.</p>
+  </div>
+</div>
+
+<h2>Scale check (32 px / 64 px) &amp; dark background</h2>
+<div class="scale-row" style="margin-bottom:16px">
+  <div class="cell"><svg width="32" height="30"><use href="#logo-a"/></svg><svg width="64" height="58" style="margin-left:14px"><use href="#logo-a"/></svg><div class="lbl">Logo 1</div></div>
+  <div class="cell"><svg width="32" height="32"><use href="#logo-b"/></svg><svg width="64" height="64" style="margin-left:14px"><use href="#logo-b"/></svg><div class="lbl">Logo 2</div></div>
+  <div class="cell"><svg width="48" height="32"><use href="#logo-c"/></svg><svg width="96" height="64" style="margin-left:14px"><use href="#logo-c"/></svg><div class="lbl">Logo 3</div></div>
+  <div class="cell"><svg width="43" height="32"><use href="#logo-d"/></svg><svg width="85" height="64" style="margin-left:14px"><use href="#logo-d"/></svg><div class="lbl">Logo 4</div></div>
+</div>
+<div class="darkcheck">
+  <span class="tile"><svg width="90" height="82"><use href="#logo-a"/></svg></span>
+  <span class="tile"><svg width="76" height="76"><use href="#logo-b"/></svg></span>
+  <svg width="140" height="94"><use href="#logo-c-dark"/></svg>
+  <span class="tile"><svg width="104" height="78"><use href="#logo-d"/></svg></span>
+</div>
+<p class="cap" style="margin-top:10px">Dark-mode strategy: Logos 1, 2 and 4 sit on a cream tile (like an avatar); Logo 3 has a true dark variant.</p>
+
+<h2>README header treatments</h2>
+
+<!-- T1 -->
+<div class="readme">
+  <div class="bar"><i></i><i></i><i></i></div>
+  <div class="body rm-center">
+    <svg width="170" height="150"><use href="#logo-a"/></svg>
+    <div class="rm-title">semantic-search</div>
+    <p class="rm-tag">Local semantic search Claude runs from <b>inside the sandbox</b> — no network, no dependencies, nothing to install but the clone.</p>
+    <div class="pills">
+      <span class="pill hi">fully offline</span><span class="pill">zero dependencies</span>
+      <span class="pill">sandbox-native</span><span class="pill">macOS · Apple Silicon</span><span class="pill">MIT model</span>
+    </div>
+    <div class="rm-code">git clone https://github.com/dudgeon/gd-smol-sim-search<br>cd gd-smol-sim-search &amp;&amp; ./setup.sh</div>
+  </div>
+</div>
+<p class="cap"><b>Treatment 1</b> — centered hero with the mascot. Classic open-source README front door; warm and personal.</p>
+
+<!-- T2 -->
+<div class="readme">
+  <div class="bar"><i></i><i></i><i></i></div>
+  <div class="body">
+    <div class="rm-row">
+      <svg width="96" height="96" style="flex:none"><use href="#logo-b"/></svg>
+      <div>
+        <div class="rm-title mono" style="margin:0 0 2px">sem</div>
+        <p class="rm-tag" style="margin:0 0 10px">Find things by <b>meaning</b>, not grep. A smol, fully offline semantic search engine for Claude Code — every byte it needs ships in the repo.</p>
+        <div class="pills" style="justify-content:flex-start;margin:0">
+          <span class="pill hi">no network, ever</span><span class="pill">190&nbsp;MB, batteries included</span><span class="pill">CSV · JSONL · MD · code · PDF</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<p class="cap"><b>Treatment 2</b> — compact banner with the mark, CLI-first (“sem” in monospace). Tool-like and terse; best if the README should feel like an engineering doc.</p>
+
+<!-- T3 -->
+<div class="readme dark">
+  <div class="bar"><i></i><i></i><i></i></div>
+  <div class="body rm-center">
+    <svg width="330" height="220"><use href="#logo-c-dark"/></svg>
+    <div class="rm-title">semantic-search</div>
+    <p class="rm-tag">Search by meaning. Cluster, dedupe, compare. All local, all offline — <b>simple, lightweight, sandbox-safe.</b></p>
+    <div class="pills">
+      <span class="pill hi">offline</span><span class="pill">in-process</span><span class="pill">no external services</span><span class="pill">claude-operable</span>
+    </div>
+  </div>
+</div>
+<p class="cap"><b>Treatment 3</b> — dark, concept-forward (clusters under the lens). Leads with what the tool <i>does</i> rather than the mascot; the crab is a signature in the corner.</p>
+
+<!-- T4 -->
+<div class="readme">
+  <div class="bar"><i></i><i></i><i></i></div>
+  <div class="body rm-center">
+    <svg width="250" height="188"><use href="#logo-d"/></svg>
+    <div class="rm-title">smol-sim-search</div>
+    <p class="rm-tag">A crab-sized search engine that <b>never leaves the sandbox.</b><br>
+    <span style="font-size:14px">Local embeddings for Claude Code — simple, lightweight, zero external dependencies.</span></p>
+    <div class="pills">
+      <span class="pill hi">stays in the sandbox</span><span class="pill">nothing to download</span><span class="pill">pail included</span>
+    </div>
+  </div>
+</div>
+<p class="cap"><b>Treatment 4</b> — playful, leaning into the repo name and the sandbox pun. Most memorable; least “serious infrastructure”.</p>
+
+</div>
+</body>
+</html>
