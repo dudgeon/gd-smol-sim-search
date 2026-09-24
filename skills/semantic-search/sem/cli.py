@@ -13,42 +13,24 @@ from pathlib import Path
 
 from . import __version__
 from .env import (SemError, default_model_key, get_paths, install_network_guard, load_install_info,
-                  load_registry, log, model_spec, network_guard_active, offline_env_ok)
+                  load_registry, log, model_spec, network_guard_active)
 
 
 class Ctx:
     def __init__(self, args, paths):
         self.args = args
         self.paths = paths
-        self._device = None
-        self.device_info: dict = {}
         self._embedders: dict = {}
-        self.used_model = False
 
     def default_model(self) -> str:
         return getattr(self.args, "model", None) or default_model_key()
 
-    def device(self) -> str:
-        if self._device is None:
-            from .device import select_device
-            self._device, self.device_info = select_device(
-                getattr(self.args, "device", None), self.paths.sem_home / "device.json",
-                reprobe=getattr(self.args, "reprobe", False))
-        return self._device
-
     def embedder(self, key: str):
         if key not in self._embedders:
             from .embed import load_embedder
-            spec = model_spec(key)
-            dev = "cpu" if spec.get("backend") == "hash" else self.device()
-            self._embedders[key] = load_embedder(self.paths, key, dev)
-            self.used_model = True
+            self._embedders[key] = load_embedder(self.paths, key)
         return self._embedders[key]
 
-    def reported_device(self) -> str:
-        for e in self._embedders.values():
-            return e.device
-        return "cpu"
 
 
 # --- helpers -----------------------------------------------------------------------
@@ -106,10 +88,10 @@ def cmd_doctor(ctx: Ctx) -> tuple[dict, str, int]:
         except metadata.PackageNotFoundError:
             return None
 
-    pkgs = {p: ver(p) for p in ("torch", "sentence-transformers", "transformers", "numpy", "pypdf")}
-    for p in ("torch", "sentence-transformers", "numpy", "pypdf"):
+    pkgs = {p: ver(p) for p in ("onnxruntime", "tokenizers", "numpy", "pypdf")}
+    for p in pkgs:
         if pkgs[p] is None:
-            problems.append(f"python package '{p}' is missing from the runtime venv; re-run ./setup.sh")
+            problems.append(f"python package '{p}' is missing from the runtime; re-run ./setup.sh")
 
     reg = load_registry()
     models = {}
@@ -139,21 +121,15 @@ def cmd_doctor(ctx: Ctx) -> tuple[dict, str, int]:
 
     # env: every cache/tmp must point into ./.sem
     home_env = {}
-    for var in ("TMPDIR", "XDG_CACHE_HOME", "TORCH_HOME", "HF_HOME"):
+    for var in ("TMPDIR", "XDG_CACHE_HOME"):
         home_env[var] = os.environ.get(var)
-    for var in ("TMPDIR", "XDG_CACHE_HOME", "TORCH_HOME"):
+    for var in ("TMPDIR", "XDG_CACHE_HOME"):
         v = os.environ.get(var)
         if not v or not Path(v).resolve().is_relative_to(paths.sem_home.resolve()):
             warnings.append(f"{var} is not inside {paths.sem_home} (run sem through its bin/sem wrapper)")
 
-    net = {"guard_active": network_guard_active(), "offline_env": offline_env_ok()}
-    if not net["offline_env"]:
-        warnings.append("HF_HUB_OFFLINE / TRANSFORMERS_OFFLINE not set (run sem through bin/sem)")
+    net = {"guard_active": network_guard_active()}
 
-    probe_dev = ctx.device() if pkgs["torch"] else "cpu"
-    dev = {"device": probe_dev, **ctx.device_info}
-    if probe_dev == "cpu" and platform.system() == "Darwin":
-        warnings.append(f"running on CPU: {ctx.device_info.get('reason')}")
 
     load = None
     if ctx.args.full and not problems:
@@ -180,19 +156,17 @@ def cmd_doctor(ctx: Ctx) -> tuple[dict, str, int]:
         "cwd_writable": writable,
         "env": home_env,
         "network": net,
-        "device_probe": dev,
         "model_load": load,
         "problems": problems,
         "warnings": warnings,
     }
     lines = [f"sem {__version__} — {'OK' if not problems else 'PROBLEMS FOUND'}",
              f"  runtime:   {rt}",
-             f"  python:    {out['python']}   torch {pkgs['torch']}   sentence-transformers {pkgs['sentence-transformers']}",
+             f"  python:    {out['python']}   onnxruntime {pkgs['onnxruntime']}   tokenizers {pkgs['tokenizers']}",
              f"  models:    " + (", ".join(f"{k}@{v['revision'][:10]}" for k, v in models.items()) or "none"),
              f"  default:   {dflt}",
              f"  index dir: {paths.sem_home} (writable: {writable})",
-             f"  network:   guard {'on' if net['guard_active'] else 'OFF'}, offline env {'set' if net['offline_env'] else 'NOT set'}",
-             f"  device:    {probe_dev} ({ctx.device_info.get('reason', '')})"]
+             f"  network:   {'blocked (socket guard on)' if net['guard_active'] else 'guard OFF'}"]
     if load:
         lines.append(f"  model load: {'ok' if load.get('ok') else 'FAILED'}")
     lines += [f"  ! {p}" for p in problems] + [f"  ~ {w}" for w in warnings]
@@ -369,8 +343,6 @@ def build_parser() -> argparse.ArgumentParser:
     common = argparse.ArgumentParser(add_help=False)
     common.add_argument("--index", default=os.environ.get("SEM_INDEX", "default"), help="index name (default: default)")
     common.add_argument("--json", action="store_true", help="emit one JSON document on stdout")
-    common.add_argument("--device", choices=["auto", "cpu", "mps"], help="compute device (env SEM_DEVICE)")
-    common.add_argument("--reprobe", action="store_true", help="re-run the Metal probe")
     common.add_argument("--model", help="model key (fixed per index)")
     common.add_argument("--snippet", type=int, default=300, help="max chars of text per hit (0 = full)")
 
@@ -378,7 +350,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--version", action="version", version=f"sem {__version__}")
     sub = p.add_subparsers(dest="cmd", required=True, metavar="command")
 
-    s = sub.add_parser("doctor", parents=[common], help="check the runtime, device and sandbox fit")
+    s = sub.add_parser("doctor", parents=[common], help="check the runtime and sandbox fit")
     s.add_argument("--full", action="store_true", help="also load the default model and embed a test string")
     s.set_defaults(fn=cmd_doctor)
 
@@ -462,8 +434,6 @@ def main(argv: list[str] | None = None) -> int:
     try:
         paths = get_paths()
         ctx = Ctx(args, paths)
-        if args.device:
-            os.environ["SEM_DEVICE"] = args.device
         res, human, code = args.fn(ctx)
     except SemError as e:
         if getattr(args, "json", False):
@@ -484,16 +454,10 @@ def main(argv: list[str] | None = None) -> int:
 
 
 def _emit(args, ctx, res, human, code) -> int:
-    device = ctx.reported_device() if args.cmd != "doctor" else res["device_probe"]["device"]
-    note = ctx.device_info.get("reason") if ctx.device_info else None
     if args.json:
-        doc = {"ok": code == 0, "command": args.cmd, "device": device}
-        if note and args.cmd != "doctor":
-            doc["device_note"] = note
+        doc = {"ok": code == 0, "command": args.cmd}
         doc.update(res)
         print(json.dumps(doc, ensure_ascii=False, indent=None))
     else:
-        if args.cmd != "doctor":
-            log(f"[device: {device}]" + (f" {note}" if note and device == "cpu" and ctx.device_info.get("fallback") else ""))
         print(human)
     return code

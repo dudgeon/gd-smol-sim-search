@@ -181,7 +181,6 @@ def run_index(paths: Paths, ctx, name: str, roots: list[str], model: str | None,
     return {
         "index": name,
         "model": key,
-        "device": embedder.device if embedder else "none (nothing to embed)",
         "files_seen": len(files),
         "unchanged": unchanged,
         "added": added,

@@ -1,0 +1,2 @@
+# Vendored files must be checked out byte-for-byte (setup.sh verifies SHA-256).
+vendor/** -text -diff

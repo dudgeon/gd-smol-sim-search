@@ -28,15 +28,20 @@ GOLDEN = [
 DUPE_PAIR = ("fx/docs/tides.md", "fx/notes/moon-notes.md")
 
 
-def find_runtime() -> Path | None:
-    """A real installed runtime (for real-model tests), if any."""
-    cands = [os.environ.get("SEM_TEST_RUNTIME"),
-             str(Path.home() / ".claude/skills/semantic-search/runtime"),
-             str(Path(os.environ.get("XDG_DATA_HOME", Path.home() / ".local/share")) / "semantic-search/runtime")]
-    for c in cands:
-        if c and (Path(c) / "install.json").exists():
-            return Path(c)
-    return None
+def assemble_vendored_model(dest: Path) -> Path:
+    """Join the vendored model pieces (as setup.sh does) into dest/<key>/ and verify the hash."""
+    import hashlib
+    src = next(p for p in (REPO / "vendor" / "models").iterdir() if p.is_dir())
+    meta = json.loads((src / "model.json").read_text())
+    out = dest / src.name
+    out.mkdir(parents=True, exist_ok=True)
+    for name, want in meta["files_sha256"].items():
+        parts = sorted(src.glob(f"{name}.part*")) or [src / name]
+        data = b"".join(p.read_bytes() for p in parts)
+        assert hashlib.sha256(data).hexdigest() == want, f"{name} does not match upstream hash"
+        (out / name).write_bytes(data)
+    (out / ".sem-revision").write_text(meta["revision"] + "\n")
+    return dest
 
 
 class Sem:
@@ -70,9 +75,6 @@ def base_env(project: Path) -> dict:
         "SEM_HOME": str(sem_home),
         "TMPDIR": str(sem_home / "tmp"),
         "XDG_CACHE_HOME": str(sem_home / "cache"),
-        "TORCH_HOME": str(sem_home / "cache" / "torch"),
-        "HF_HUB_OFFLINE": "1",
-        "TRANSFORMERS_OFFLINE": "1",
         "SEM_QUIET": "1",
     })
     return env

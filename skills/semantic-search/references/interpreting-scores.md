@@ -7,7 +7,7 @@ model-specific band, so:
 2. **Look for gaps.** A drop from 0.78 to 0.62 between hit 2 and hit 3 usually marks the edge of what's relevant.
 3. **Compare against the corpus.** `sem outliers` prints `median_mean_neighbor_score`, the typical similarity of
    an item to its nearest neighbours in *this* corpus. Hits well above it are notable.
-4. **Scores from different models or indexes are not comparable.** Every index records its model, and `sem`
+4. **Scores from different models are not comparable.** Every index records its model and revision, and `sem`
    refuses to mix them.
 5. **Chunk vs file.** A file vector is the mean of its chunk vectors. File-to-file scores are smoother (and usually
    higher) than the best chunk-to-chunk match. For "where exactly do these overlap", use `compare A B`, which
@@ -33,15 +33,6 @@ Kubernetes, gardening, code, recipes, support tickets, volcanoes):
 - Queries use the prompt "Represent this sentence for searching relevant passages: ". Query→passage scores are
   therefore a bit lower than passage→passage scores for the same content. Don't compare `search` scores with
   `similar` scores directly.
-
-## qwen3-0.6b (`Qwen/Qwen3-Embedding-0.6B`, optional)
-
-- Uses an instruction prompt for queries (the model's built-in `query` prompt). Documents are embedded as-is.
-- Its score range has **not yet been measured in this repo** (the build environment could not download it). Don't
-  reuse the bge numbers above. Calibrate from score gaps and the corpus median, as described below.
-- Default `dupes` threshold is **0.92**.
-- Multilingual: a query in one language can match passages in another, usually at a somewhat lower score than
-  a same-language match.
 
 ## Picking thresholds for a specific corpus
 

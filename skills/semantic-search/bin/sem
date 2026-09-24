@@ -28,9 +28,9 @@ if [ -z "$runtime" ]; then
   echo "sem: runtime not found. Run ./setup.sh from the semantic-search repo in your own terminal." >&2
   exit 3
 fi
-PY="$runtime/venv/bin/python"
+PY="$runtime/python/bin/python3"
 if [ ! -x "$PY" ]; then
-  echo "sem: runtime at $runtime is incomplete (no venv python). Re-run ./setup.sh." >&2
+  echo "sem: runtime at $runtime is incomplete (no python). Re-run ./setup.sh." >&2
   exit 3
 fi
 
@@ -46,16 +46,8 @@ fi
 export SEM_HOME SEM_RUNTIME="$runtime"
 export TMPDIR="$SEM_HOME/tmp"
 export XDG_CACHE_HOME="$SEM_HOME/cache"
-export TORCH_HOME="$SEM_HOME/cache/torch"
-export TORCHINDUCTOR_CACHE_DIR="$SEM_HOME/cache/torchinductor"
-export HF_HOME="$runtime/models"             # read-only use
-export HF_MODULES_CACHE="$SEM_HOME/cache/hf-modules"
-export HF_XET_CACHE="$SEM_HOME/cache/xet"
-export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 HF_HUB_DISABLE_TELEMETRY=1 HF_DATASETS_OFFLINE=1
-export DO_NOT_TRACK=1 HF_HUB_DISABLE_PROGRESS_BARS=1 TRANSFORMERS_NO_ADVISORY_WARNINGS=1
 export PYTHONDONTWRITEBYTECODE=1 PYTHONNOUSERSITE=1
 export TOKENIZERS_PARALLELISM=false
-export PYTORCH_ENABLE_MPS_FALLBACK=1
 export PYTHONPATH="$SKILL_DIR${PYTHONPATH:+:$PYTHONPATH}"
 
 # -P: don't put the cwd on sys.path (a project's own "sem" package must not shadow ours)

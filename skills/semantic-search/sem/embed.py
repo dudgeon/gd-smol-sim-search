@@ -38,7 +38,7 @@ class Embedder:
         return int(self.spec["max_seq_length"]) - 8
 
 
-# --- hash backend (tests; no torch, no download) ------------------------------
+# --- hash backend (tests; no model files) ---------------------------------------
 
 _STOP = frozenset("""a an and are as at be but by for from has have how i in is it its of on or
 that the this to was were what when where which who why will with you your do does""".split())
@@ -83,115 +83,83 @@ class HashEmbedder(Embedder):
         return np.stack([self._vec(t) for t in texts]).astype(np.float32)
 
 
-# --- sentence-transformers backend --------------------------------------------
+# --- ONNX Runtime backend -------------------------------------------------------------
 
-def _is_oom(e: BaseException) -> bool:
-    s = str(e).lower()
-    return "out of memory" in s or "mps backend out of memory" in s
+class OnnxEmbedder(Embedder):
+    """BERT-style encoder (bge-small) in ONNX Runtime on CPU, tokenised with `tokenizers`.
 
+    Matches sentence-transformers' output for the same model: CLS pooling + L2 normalisation.
+    """
 
-class STEmbedder(Embedder):
-    def __init__(self, spec: dict, model_dir: Path, device: str):
-        import logging
-        import warnings
-
-        warnings.filterwarnings("ignore", category=FutureWarning)
-        warnings.filterwarnings("ignore", category=UserWarning)
-        for name in ("transformers", "sentence_transformers", "huggingface_hub"):
-            logging.getLogger(name).setLevel(logging.ERROR)
-        try:
-            from transformers.utils import logging as tlog
-            tlog.set_verbosity_error()
-            tlog.disable_progress_bar()
-        except Exception:
-            pass
-
-        from sentence_transformers import SentenceTransformer
+    def __init__(self, spec: dict, model_dir: Path):
+        import onnxruntime as ort
+        from tokenizers import Tokenizer
 
         self.spec = spec
         self.key = spec["key"]
         self.dim = int(spec["dim"])
+        self.device = "cpu"
         rev_file = model_dir / ".sem-revision"
         self.revision = rev_file.read_text().strip() if rev_file.exists() else "unknown"
-        self.device = device
-        self.model = SentenceTransformer(str(model_dir), device=device, local_files_only=True)
-        self.model.max_seq_length = min(int(spec["max_seq_length"]), int(self.model.max_seq_length or 10**9))
-        self.tokenizer = self.model.tokenizer
-        dim_fn = getattr(self.model, "get_embedding_dimension", None) or self.model.get_sentence_embedding_dimension
-        got = dim_fn()
-        if got and got != self.dim:
-            raise SemError(f"model '{self.key}' has dim {got}, registry says {self.dim}")
-        self.batch_size = int(os.environ.get("SEM_BATCH_SIZE") or (64 if device == "mps" else 32))
+        self.max_len = int(spec["max_seq_length"])
 
-    @property
-    def max_chunk_tokens(self) -> int:
-        return int(self.model.max_seq_length) - 8
+        tok_path = str(model_dir / "tokenizer.json")
+        self.counter = Tokenizer.from_file(tok_path)  # no truncation/padding: exact token counts
+        self.counter.no_truncation()
+        self.counter.no_padding()
+        self.tok = Tokenizer.from_file(tok_path)
+        self.tok.enable_truncation(self.max_len)
+        pad_id = self.tok.token_to_id("[PAD]") or 0
+        self.tok.enable_padding(pad_id=pad_id, pad_token="[PAD]")
+
+        so = ort.SessionOptions()
+        so.log_severity_level = 3
+        threads = os.environ.get("SEM_THREADS")
+        if threads:
+            so.intra_op_num_threads = int(threads)
+        self.sess = ort.InferenceSession(str(model_dir / "model.onnx"), sess_options=so,
+                                         providers=["CPUExecutionProvider"])
+        self.input_names = {i.name for i in self.sess.get_inputs()}
+        self.batch_size = int(os.environ.get("SEM_BATCH_SIZE") or 32)
 
     def count_tokens(self, texts):
         if not texts:
             return []
-        enc = self.tokenizer(list(texts), add_special_tokens=False, truncation=False)
-        return [len(ids) for ids in enc["input_ids"]]
+        return [len(e.ids) for e in self.counter.encode_batch(list(texts), add_special_tokens=False)]
 
     def token_spans(self, text):
-        enc = self.tokenizer(text, add_special_tokens=False, truncation=False, return_offsets_mapping=True)
-        return [tuple(o) for o in enc["offset_mapping"]]
+        return list(self.counter.encode(text, add_special_tokens=False).offsets)
 
-    def _encode_batch(self, batch: list[str], kind: str) -> np.ndarray:
-        kw: dict = {}
-        if kind == "query":
-            if self.spec.get("query_prompt_name") and self.spec["query_prompt_name"] in (self.model.prompts or {}):
-                kw["prompt_name"] = self.spec["query_prompt_name"]
-            elif self.spec.get("query_prefix"):
-                kw["prompt"] = self.spec["query_prefix"]
-        elif self.spec.get("document_prefix"):
-            kw["prompt"] = self.spec["document_prefix"]
-        return self.model.encode(batch, batch_size=len(batch), normalize_embeddings=True,
-                                 convert_to_numpy=True, show_progress_bar=False, **kw)
+    def _run(self, batch: list[str]) -> np.ndarray:
+        enc = self.tok.encode_batch(batch)
+        ids = np.array([e.ids for e in enc], dtype=np.int64)
+        feeds = {"input_ids": ids,
+                 "attention_mask": np.array([e.attention_mask for e in enc], dtype=np.int64)}
+        if "token_type_ids" in self.input_names:
+            feeds["token_type_ids"] = np.zeros_like(ids)
+        hidden = self.sess.run(None, feeds)[0]
+        cls = hidden[:, 0].astype(np.float32)
+        norms = np.linalg.norm(cls, axis=1, keepdims=True)
+        norms[norms == 0] = 1.0
+        return cls / norms
 
     def encode(self, texts, kind="document", progress=False):
         if not texts:
             return np.zeros((0, self.dim), dtype=np.float32)
-        # sort by length so batches are similarly padded
+        prefix = self.spec.get("query_prefix", "") if kind == "query" else self.spec.get("document_prefix", "")
+        texts = [prefix + t for t in texts] if prefix else list(texts)
+        # sort by length so each batch pads to a similar length
         order = sorted(range(len(texts)), key=lambda i: -len(texts[i]))
         out = np.zeros((len(texts), self.dim), dtype=np.float32)
         bar = Progress(len(texts), "embedding") if progress else None
-        i = 0
-        while i < len(order):
-            idx = order[i: i + self.batch_size]
-            batch = [texts[j] for j in idx]
-            try:
-                vecs = self._encode_batch(batch, kind)
-            except RuntimeError as e:
-                if not _is_oom(e):
-                    raise
-                self._empty_cache()
-                if self.batch_size > 1:
-                    self.batch_size = max(1, self.batch_size // 2)
-                    log(f"sem: out of memory on {self.device}; batch size -> {self.batch_size}")
-                    continue
-                if self.device != "cpu":
-                    log("sem: out of memory at batch size 1; moving model to cpu")
-                    self.model.to("cpu")
-                    self.device = "cpu"
-                    self.batch_size = 16
-                    continue
-                raise
-            out[idx] = vecs
-            i += len(idx)
+        for s in range(0, len(order), self.batch_size):
+            idx = order[s: s + self.batch_size]
+            out[idx] = self._run([texts[j] for j in idx])
             if bar:
                 bar.update(len(idx))
         if bar:
             bar.close()
         return out
-
-    def _empty_cache(self):
-        try:
-            import torch
-            if self.device == "mps":
-                torch.mps.empty_cache()
-        except Exception:
-            pass
 
 
 def model_dir_for(paths: Paths, key: str) -> Path:
@@ -199,8 +167,8 @@ def model_dir_for(paths: Paths, key: str) -> Path:
     if base is None:
         raise SemError("sem runtime not found (SEM_RUNTIME unset). Run ./setup.sh from the repo.")
     d = base / key
-    if not (d / "modules.json").exists() and not (d / "config.json").exists():
-        raise SemError(f"model '{key}' is not installed. Run ./setup.sh --model {key} in your terminal.")
+    if not (d / "model.onnx").exists() or not (d / "tokenizer.json").exists():
+        raise SemError(f"model '{key}' is not installed in {base}. Re-run ./setup.sh in your terminal.")
     return d
 
 
@@ -215,8 +183,8 @@ def installed_revision(paths: Paths, key: str) -> str | None:
     return f.read_text().strip() if f.exists() else None
 
 
-def load_embedder(paths: Paths, key: str, device: str) -> Embedder:
+def load_embedder(paths: Paths, key: str) -> Embedder:
     spec = model_spec(key)
     if spec.get("backend") == "hash":
         return HashEmbedder(spec)
-    return STEmbedder(spec, model_dir_for(paths, key), device)
+    return OnnxEmbedder(spec, model_dir_for(paths, key))

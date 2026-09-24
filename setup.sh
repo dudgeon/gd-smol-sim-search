@@ -1,24 +1,18 @@
 #!/usr/bin/env bash
 # setup.sh — install the semantic-search skill for Claude Code.
 #
-# Run this in your own terminal (it needs the network; nothing else does).
-# It is idempotent: re-running only verifies what is already there.
+# Fully offline: everything it installs (Python, packages, model) is vendored in
+# this repo under vendor/ and checked against vendor/SHA256SUMS first. It never
+# uses the network. Idempotent: re-running only verifies what is already there.
 #
-#   ./setup.sh                      install (copies the skill, downloads the default model)
-#   ./setup.sh --model qwen3-0.6b   also install another model (repeatable)
+#   ./setup.sh                      install (copies the skill to ~/.claude/skills)
 #   ./setup.sh --link               dev mode: symlink the skill to this repo
-#   ./setup.sh --update             refresh packages and skill files, keep models
-#   ./setup.sh --runtime-dir DIR    put the runtime (uv, Python, venv, models) in DIR
+#   ./setup.sh --update             reinstall the runtime and skill files from vendor/
+#   ./setup.sh --runtime-dir DIR    put the runtime (Python, packages, model) in DIR
 #   ./setup.sh --uninstall [--yes]  remove the skill and its runtime
 set -euo pipefail
 
-# --- pins -------------------------------------------------------------------------
-UV_VERSION="0.12.18"
-UV_SHA256_aarch64_apple_darwin="cf40e0c6a202190ccd9e0406dcfdd5b2d6668a9a5c779b17948963df32aafe5b"
-# Linux is for development of this repo only (see CLAUDE.md); not a supported target.
-UV_SHA256_x86_64_unknown_linux_gnu="89eadd7c76fc063887959510d5ba0ab1264dfd5f1143b925ddb73021a40acf16"
-PYTHON_VERSION="3.12.14"
-MIN_MACOS_MAJOR=14   # torch 2.14 wheels are macosx_14_0_arm64
+MIN_MACOS_MAJOR=14   # the vendored onnxruntime and numpy wheels are macosx_14_0_arm64
 
 # --- paths ------------------------------------------------------------------------
 REPO_DIR="$(cd -P "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -26,11 +20,9 @@ SKILL_SRC="$REPO_DIR/skills/semantic-search"
 SKILLS_HOME="${CLAUDE_SKILLS_DIR:-$HOME/.claude/skills}"
 SKILL_DEST="$SKILLS_HOME/semantic-search"
 LINK_RUNTIME_DEFAULT="${XDG_DATA_HOME:-$HOME/.local/share}/semantic-search/runtime"
-REGISTRY="$SKILL_SRC/models.json"
-LOCKFILE="${SEM_SETUP_LOCKFILE:-$SKILL_SRC/requirements.lock}"
+VENDOR="${SEM_SETUP_VENDOR_DIR:-$REPO_DIR/vendor}"
 
 # --- args -------------------------------------------------------------------------
-MODELS=()
 MODE="copy"
 UPDATE=0
 UNINSTALL=0
@@ -39,8 +31,6 @@ RUNTIME_DIR=""
 SELF_TEST=1
 while [ $# -gt 0 ]; do
   case "$1" in
-    --model) [ $# -ge 2 ] || { echo "--model needs a key" >&2; exit 2; }; MODELS+=("$2"); shift 2 ;;
-    --model=*) MODELS+=("${1#*=}"); shift ;;
     --link) MODE="link"; shift ;;
     --update) UPDATE=1; shift ;;
     --uninstall) UNINSTALL=1; shift ;;
@@ -97,38 +87,35 @@ fi
 step "Preflight"
 OS="$(uname -s)"; ARCH="$(uname -m)"
 if [ "$OS" = "Darwin" ] && [ "$ARCH" = "arm64" ]; then
-  UV_TRIPLE="aarch64-apple-darwin"
+  HOST_PLATFORM="macos-arm64"
   mac_major="$(sw_vers -productVersion | cut -d. -f1)"
   [ "$mac_major" -ge "$MIN_MACOS_MAJOR" ] || die "macOS $MIN_MACOS_MAJOR or later is required (found $(sw_vers -productVersion))."
 elif [ "${SEM_SETUP_ALLOW_LINUX:-}" = 1 ] && [ "$OS" = "Linux" ] && [ "$ARCH" = "x86_64" ]; then
-  UV_TRIPLE="x86_64-unknown-linux-gnu"
+  HOST_PLATFORM="linux-x86_64"
   warn "Linux dev mode (SEM_SETUP_ALLOW_LINUX=1): unsupported for real use"
 else
   die "semantic-search supports macOS on Apple Silicon only (found $OS $ARCH)."
 fi
-for tool in curl shasum tar; do
-  if ! command -v "$tool" >/dev/null 2>&1; then
-    if [ "$tool" = shasum ] && command -v sha256sum >/dev/null 2>&1 && [ "$OS" = Linux ]; then continue; fi
-    die "required tool '$tool' not found"
-  fi
-done
-sha256_of() { if command -v shasum >/dev/null 2>&1; then shasum -a 256 "$1" | cut -d' ' -f1; else sha256sum "$1" | cut -d' ' -f1; fi; }
+if command -v shasum >/dev/null 2>&1; then SHA256="shasum -a 256"
+elif command -v sha256sum >/dev/null 2>&1; then SHA256="sha256sum"
+else die "required tool 'shasum' not found"; fi
+command -v tar >/dev/null 2>&1 || die "required tool 'tar' not found"
+sha256_of() { $SHA256 "$1" | cut -d' ' -f1; }
 
-for k in ${MODELS[@]+"${MODELS[@]}"}; do
-  grep -q "^    \"$k\": {" "$REGISTRY" && [ "$k" != hash-test ] \
-    || die "unknown model '$k' (see skills/semantic-search/models.json)"
-done
-DEFAULT_MODEL="$(sed -n 's/^  "default": "\(.*\)",$/\1/p' "$REGISTRY")"
-[ -n "$DEFAULT_MODEL" ] || die "could not read default model from $REGISTRY"
-WANT_MODELS=("$DEFAULT_MODEL")
-for k in ${MODELS[@]+"${MODELS[@]}"}; do
-  [[ " ${WANT_MODELS[*]} " == *" $k "* ]] || WANT_MODELS+=("$k")
-done
-
-# --- 2. install locations ---------------------------------------------------------
-if [ -z "$RUNTIME_DIR" ]; then
-  if [ "$UPDATE" = 1 ] || [ -e "$SKILL_DEST" ]; then RUNTIME_DIR="$(existing_runtime || true)"; fi
+# --- 2. verify vendor/ --------------------------------------------------------------
+step "Verifying vendored files"
+[ -f "$VENDOR/SHA256SUMS" ] || die "$VENDOR/SHA256SUMS is missing. Re-clone the repository (vendor/ holds the runtime)."
+grep -q "\"platform\": \"$HOST_PLATFORM\"" "$VENDOR/PROVENANCE.json" \
+  || die "vendor/ was built for another platform (see $VENDOR/PROVENANCE.json); this machine is $HOST_PLATFORM"
+if ! check_out="$(cd "$VENDOR" && $SHA256 -c SHA256SUMS 2>&1)"; then
+  echo "$check_out" | grep -v ': OK$' >&2
+  die "vendored files failed checksum verification. Re-clone the repository."
 fi
+ok "$(grep -c . "$VENDOR/SHA256SUMS") files match SHA256SUMS"
+VENDOR_STAMP="$(sha256_of "$VENDOR/SHA256SUMS")"
+
+# --- 3. install locations ---------------------------------------------------------
+if [ -z "$RUNTIME_DIR" ] && [ -e "$SKILL_DEST" ]; then RUNTIME_DIR="$(existing_runtime || true)"; fi
 if [ -z "$RUNTIME_DIR" ]; then
   if [ "$MODE" = link ]; then RUNTIME_DIR="$LINK_RUNTIME_DEFAULT"; else RUNTIME_DIR="$SKILL_DEST/runtime"; fi
 fi
@@ -144,79 +131,74 @@ if [ "$MODE" = copy ] && [ -L "$SKILL_DEST" ]; then
 fi
 mkdir -p "$SKILLS_HOME" "$RUNTIME_DIR"
 avail_kb="$(df -Pk "$RUNTIME_DIR" | awk 'NR==2 {print $4}')"
-if [ -n "$avail_kb" ] && [ "$avail_kb" -lt $((3 * 1024 * 1024)) ]; then
-  warn "less than 3 GB free at $RUNTIME_DIR ($((avail_kb / 1024)) MB); the runtime needs about 1.5 GB plus models"
+if [ -n "$avail_kb" ] && [ "$avail_kb" -lt $((1024 * 1024)) ]; then
+  warn "less than 1 GB free at $RUNTIME_DIR ($((avail_kb / 1024)) MB); the runtime needs about 450 MB"
 fi
 ok "skill:   $SKILL_DEST ($MODE)"
 ok "runtime: $RUNTIME_DIR"
 
-export UV_CACHE_DIR="${SEM_SETUP_UV_CACHE_DIR:-$RUNTIME_DIR/.setup-cache/uv}"
-export UV_PYTHON_INSTALL_DIR="$RUNTIME_DIR/python"
-export UV_PYTHON_PREFERENCE=only-managed
-export UV_NO_CONFIG=1 UV_NO_PROGRESS=1 UV_PYTHON_DOWNLOADS=manual
-unset UV_NATIVE_TLS 2>/dev/null || true
+PY="$RUNTIME_DIR/python/bin/python3"
+STAMP_FILE="$RUNTIME_DIR/.vendor-stamp"
 
-# --- 3. uv ------------------------------------------------------------------------
-step "uv $UV_VERSION"
-UV="$RUNTIME_DIR/bin/uv"
-if [ -x "$UV" ] && [ "$("$UV" --version 2>/dev/null | awk '{print $2}')" = "$UV_VERSION" ]; then
-  ok "present"
+# --- 4. Python + packages ---------------------------------------------------------------
+step "Python runtime and packages"
+if [ "$UPDATE" != 1 ] && [ -x "$PY" ] && [ "$(cat "$STAMP_FILE" 2>/dev/null)" = "$VENDOR_STAMP" ]; then
+  ok "up to date"
 else
-  var="UV_SHA256_${UV_TRIPLE//-/_}"
-  want="${!var}"
-  tmpd="$(mktemp -d)"
-  url="https://github.com/astral-sh/uv/releases/download/$UV_VERSION/uv-$UV_TRIPLE.tar.gz"
-  curl --fail --location --silent --show-error --retry 3 -o "$tmpd/uv.tgz" "$url"
-  got="$(sha256_of "$tmpd/uv.tgz")"
-  [ "$got" = "$want" ] || die "uv checksum mismatch: got $got, want $want"
-  tar -xzf "$tmpd/uv.tgz" -C "$tmpd"
-  mkdir -p "$RUNTIME_DIR/bin"
-  install -m 0755 "$tmpd/uv-$UV_TRIPLE/uv" "$UV"
+  rm -f "$STAMP_FILE"
+  # leftovers from the earlier download-based installer
+  rm -rf "$RUNTIME_DIR/venv" "$RUNTIME_DIR/bin" "$RUNTIME_DIR/.setup-cache"
+  tmpd="$(mktemp -d "$RUNTIME_DIR/.python-new.XXXXXX")"
+  py_tgz="$(ls "$VENDOR"/python/cpython-*.tar.gz | head -1)"
+  tar -xzf "$py_tgz" -C "$tmpd"
+  rm -rf "$RUNTIME_DIR/python"
+  mv "$tmpd/python" "$RUNTIME_DIR/python"
   rm -rf "$tmpd"
-  ok "downloaded and verified (sha256 $want)"
+  # offline install from the vendored wheels only: no index, no dependency resolution, no cache
+  PIP_CONFIG_FILE=/dev/null "$PY" -I -m pip install --isolated --no-index --no-deps --no-cache-dir \
+    --disable-pip-version-check --no-warn-script-location --root-user-action=ignore --quiet "$VENDOR"/wheels/*.whl
+  # precompile: at runtime the runtime dir is read-only and bytecode writes are disabled
+  "$PY" -I -m compileall -q -j 0 "$RUNTIME_DIR/python/lib" >/dev/null 2>&1 || true
+  ok "Python $("$PY" -c 'import platform; print(platform.python_version())') + $(ls "$VENDOR"/wheels/*.whl | wc -l | tr -d ' ') wheels installed from vendor/"
 fi
 
-# --- 4. Python --------------------------------------------------------------------
-step "Python $PYTHON_VERSION"
-# --no-bin: don't put python shims in ~/.local/bin; nothing outside the runtime dir
-UV_PYTHON_DOWNLOADS=automatic "$UV" python install --quiet --no-bin "$PYTHON_VERSION"
-ok "managed by uv in $RUNTIME_DIR/python (download verified by uv)"
-
-# --- 5. venv + packages -------------------------------------------------------------
-step "Python packages"
-VENV="$RUNTIME_DIR/venv"
-PY="$VENV/bin/python"
-if [ ! -x "$PY" ] || [ "$("$PY" -c 'import platform; print(platform.python_version())' 2>/dev/null)" != "$PYTHON_VERSION" ]; then
-  rm -rf "$VENV"
-  "$UV" venv --quiet --python "$PYTHON_VERSION" "$VENV"
+# --- 5. model -----------------------------------------------------------------------
+step "Model"
+model_src="$(ls -d "$VENDOR"/models/*/ | head -1)"; model_src="${model_src%/}"
+MODEL_KEY="$(basename "$model_src")"
+MODEL_DEST="$RUNTIME_DIR/models/$MODEL_KEY"
+read_json() {  # read_json FILE KEY [KEY...] -> prints the nested value
+  "$PY" -I -c 'import functools,json,sys; print(functools.reduce(lambda d, k: d[k], sys.argv[2:], json.load(open(sys.argv[1]))))' "$@"
+}
+REV="$(read_json "$model_src/model.json" revision)"
+if [ "$UPDATE" != 1 ] && [ "$(cat "$MODEL_DEST/.sem-revision" 2>/dev/null)" = "$REV" ] \
+   && [ "$(cat "$MODEL_DEST/.vendor-stamp" 2>/dev/null)" = "$VENDOR_STAMP" ]; then
+  ok "$MODEL_KEY @ ${REV:0:10} up to date"
+else
+  stage="$RUNTIME_DIR/models/.$MODEL_KEY.new"
+  rm -rf "$stage"; mkdir -p "$stage"
+  for f in model.json tokenizer.json MODEL_CARD.md; do cp "$model_src/$f" "$stage/"; done
+  # large files are split in the repo; join and check against Hugging Face's published SHA-256
+  for part0 in "$model_src"/*.part00; do
+    [ -e "$part0" ] || continue
+    name="$(basename "$part0" .part00)"
+    cat "$model_src/$name".part* > "$stage/$name"
+    want="$(read_json "$model_src/model.json" files_sha256 "$name")"
+    got="$(sha256_of "$stage/$name")"
+    [ "$got" = "$want" ] || die "$name: joined file hash $got does not match upstream $want"
+  done
+  [ -f "$stage/model.onnx" ] || die "model.onnx missing from $model_src"
+  echo "$REV" > "$stage/.sem-revision"
+  echo "$VENDOR_STAMP" > "$stage/.vendor-stamp"
+  rm -rf "$MODEL_DEST"
+  mv "$stage" "$MODEL_DEST"
+  ok "$MODEL_KEY @ ${REV:0:10} installed (model.onnx matches upstream SHA-256)"
 fi
-"$UV" pip sync --quiet --python "$PY" --require-hashes --compile-bytecode "$LOCKFILE"
-ok "synced from $(basename "$LOCKFILE") (hashes required)"
+echo "$VENDOR_STAMP" > "$STAMP_FILE"
 
-# --- 6. models --------------------------------------------------------------------
-step "Models: ${WANT_MODELS[*]}"
-mkdir -p "$RUNTIME_DIR/models"
-for key in "${WANT_MODELS[@]}"; do
-  if [ -n "${SEM_SETUP_MODELS_FROM:-}" ]; then
-    # offline/mirror install: copy a pre-downloaded model whose revision matches the pin
-    src="$SEM_SETUP_MODELS_FROM/$key"
-    want_rev="$("$PY" -c "import json,sys; print(json.load(open(sys.argv[1]))['models'][sys.argv[2]]['revision'])" "$REGISTRY" "$key")"
-    [ "$(cat "$src/.sem-revision" 2>/dev/null)" = "$want_rev" ] || die "$src/.sem-revision does not match pinned revision $want_rev"
-    if [ "$(cat "$RUNTIME_DIR/models/$key/.sem-revision" 2>/dev/null)" != "$want_rev" ]; then
-      rm -rf "$RUNTIME_DIR/models/$key"; cp -R "$src" "$RUNTIME_DIR/models/$key"
-    fi
-    ok "$key copied from $SEM_SETUP_MODELS_FROM"
-    continue
-  fi
-  HF_HOME="$RUNTIME_DIR/.setup-cache/hf" HF_HUB_DISABLE_TELEMETRY=1 \
-    "$PY" "$REPO_DIR/tools/fetch_model.py" "$REGISTRY" "$key" "$RUNTIME_DIR/models" \
-    || die "model download failed for $key"
-done
-rm -rf "$RUNTIME_DIR/.setup-cache/hf"
-
-# --- 7/9. install skill files (copy: staged + atomic swap; link: symlink) -----------------
+# --- 6. install skill files (copy: staged + atomic swap; link: symlink) -----------------
 step "Skill files"
-compile_pkg() { "$PY" -m compileall -q "$1/sem" >/dev/null; }
+compile_pkg() { "$PY" -I -m compileall -q "$1/sem" >/dev/null; }
 if [ "$MODE" = link ]; then
   compile_pkg "$SKILL_SRC"
   if [ "$RUNTIME_DIR" != "$LINK_RUNTIME_DEFAULT" ]; then
@@ -235,7 +217,7 @@ else
   chmod 0755 "$STAGE"
   cleanup_stage() { rm -rf "$STAGE"; }
   trap cleanup_stage EXIT
-  for item in SKILL.md references bin sem models.json requirements.lock; do
+  for item in SKILL.md references bin sem models.json; do
     cp -R "$SKILL_SRC/$item" "$STAGE/"
   done
   find "$STAGE" -name __pycache__ -type d -prune -exec rm -rf {} +
@@ -263,15 +245,14 @@ else
   trap - EXIT
   rm -rf "$STAGE"
 fi
-rm -rf "$RUNTIME_DIR/.setup-cache"
 
-# --- 8. install.json --------------------------------------------------------------
+# --- 7. install.json --------------------------------------------------------------
 step "Recording install"
-"$PY" - "$RUNTIME_DIR" "$SKILL_DEST" "$MODE" "$UV_VERSION" "$REGISTRY" <<'EOF'
+"$PY" -I - "$RUNTIME_DIR" "$SKILL_DEST" "$MODE" "$VENDOR_STAMP" <<'EOF'
 import json, sys, time
 from importlib import metadata
 from pathlib import Path
-rt, skill, mode, uv, registry = sys.argv[1:6]
+rt, skill, mode, stamp = sys.argv[1:5]
 rtp = Path(rt)
 f = rtp / "install.json"
 old = json.loads(f.read_text()) if f.exists() else {}
@@ -287,11 +268,10 @@ info = {
     "mode": mode,
     "skill_dir": skill,
     "runtime_dir": rt,
-    "uv": uv,
+    "vendor_sha256sums": stamp,
     "python": sys.version.split()[0],
-    "packages": {p: metadata.version(p) for p in ("torch", "sentence-transformers", "transformers", "numpy", "pypdf", "huggingface-hub")},
+    "packages": {p: metadata.version(p) for p in ("onnxruntime", "tokenizers", "numpy", "pypdf")},
     "models": models,
-    "default_model": json.loads(Path(registry).read_text())["default"],
 }
 tmp = f.with_suffix(".tmp")
 tmp.write_text(json.dumps(info, indent=2) + "\n")
@@ -299,7 +279,7 @@ tmp.replace(f)
 EOF
 ok "$RUNTIME_DIR/install.json"
 
-# --- 10. self-test ----------------------------------------------------------------
+# --- 8. self-test -----------------------------------------------------------------
 SEM="$SKILL_DEST/bin/sem"
 if [ "$SELF_TEST" = 1 ]; then
   step "Self-test"
@@ -312,7 +292,7 @@ if [ "$SELF_TEST" = 1 ]; then
     "$SEM" index fixtures --json >"$T/index.json" 2>"$T/index.err" || { cat "$T/index.err"; exit 1; }
     "$SEM" search "why are there two high tides every day" -k 3 --json >"$T/search.json" 2>/dev/null
     "$SEM" dupes --across-files-only --json >"$T/dupes.json" 2>/dev/null
-    "$PY" - "$T" <<'EOF'
+    "$PY" -I - "$T" <<'EOF'
 import json, sys
 t = sys.argv[1]
 idx = json.load(open(f"{t}/index.json"))
@@ -329,15 +309,14 @@ if ("fixtures/docs/tides.md", "fixtures/notes/moon-notes.md") not in pairs:
     errs.append("dupes did not find the planted near-duplicate pair")
 if errs:
     print("\n".join("    FAIL " + e for e in errs)); sys.exit(1)
-print(f"    indexed {idx['chunks_embedded']} chunks from {idx['files_seen']} files on {idx['device']} "
-      f"in {idx['seconds']}s; search and dupes returned the expected results")
+print(f"    indexed {idx['chunks_embedded']} chunks from {idx['files_seen']} files in {idx['seconds']}s; "
+      "search and dupes returned the expected results")
 EOF
   ) || die "self-test failed (see above)"
   ok "passed"
-  grep -E '^  (device|models):' "$T/doctor.txt" | sed 's/^/  /' || true
 fi
 
-# --- 11. next steps ---------------------------------------------------------------
+# --- 9. next steps ----------------------------------------------------------------
 cat <<EOF
 
 ${G}${B}semantic-search is installed.${N}
@@ -349,6 +328,7 @@ ${G}${B}semantic-search is installed.${N}
 Start a new Claude Code session in any project and ask for semantic search,
 similar files, near-duplicates, clusters, etc. Claude finds the skill by itself.
 
+Nothing was downloaded: everything came from vendor/ in this repository.
 No sandbox settings changes are needed: sem only writes to ./.sem in the
 project and never uses the network.
 
@@ -356,6 +336,5 @@ Optional: if you don't run with sandbox auto-allow, you can pre-approve the
 command by adding this permission rule to ~/.claude/settings.json yourself:
     "Bash($SEM:*)"
 
-Add a model:  ./setup.sh --model qwen3-0.6b
 Uninstall:    ./setup.sh --uninstall
 EOF

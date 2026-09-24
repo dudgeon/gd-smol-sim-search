@@ -10,13 +10,10 @@ sem <command> [options]
 |---|---|
 | `--index NAME` | Index to use (default `default`, env `SEM_INDEX`). Indexes live in `./.sem/indexes/NAME/`. |
 | `--json` | Print exactly one JSON document on stdout; progress and logs go to stderr. |
-| `--device auto\|cpu\|mps` | Compute device (env `SEM_DEVICE`, default `auto`). |
-| `--reprobe` | Re-run the Metal probe instead of using the cached result in `.sem/device.json`. |
-| `--model KEY` | Model key. Fixed per index: passing a different one for an existing index is an error. |
+| `--model KEY` | Model key (only `bge-small` ships). Fixed per index: a different one for an existing index is an error. |
 | `--snippet N` | Max characters of chunk text per result (default 300; `0` = full text). |
 
-Every JSON document has `ok` (bool), `command`, `device` (`cpu`, `mps`, or a note when nothing was embedded), and
-`device_note` when Metal was unavailable. Errors: `{"ok": false, "command": ..., "error": "..."}` with a non-zero exit.
+Every JSON document has `ok` (bool) and `command`. Errors: `{"ok": false, "command": ..., "error": "..."}` with a non-zero exit.
 
 A **result item** (hit) looks like:
 
@@ -38,8 +35,8 @@ chunk of a long record). `heading` is the Markdown heading trail, when there is 
 
 ## `sem doctor [--full]`
 
-Reports runtime paths, versions, installed models, the Metal probe, whether `./.sem` is writable, and whether the
-offline guarantees are in place (network guard, `HF_HUB_OFFLINE`/`TRANSFORMERS_OFFLINE`). Exits 1 on a blocking
+Reports runtime paths, versions, the installed model, whether `./.sem` is writable, and whether the network guard
+is active. Exits 1 on a blocking
 problem (missing runtime, missing default model, unwritable directory). `--full` also loads the default model and
 embeds a test string.
 
@@ -55,7 +52,7 @@ deleted, or that are now excluded under a directory being indexed, are removed.
 | `--text-field DOT.PATH` | JSON/JSONL: the field to embed (e.g. `body.text`). Default: all scalar fields as `key: value` lines. |
 | `--text-cols a,b` | CSV/TSV: columns to embed. Default: all columns as `col: value` lines. |
 | `--id-col NAME` / `--id-field NAME` | CSV column / JSON field used as the record id (default: row number). |
-| `--chunk-tokens N` | Token budget per chunk (default: 300 for bge-small, 512 for qwen3-0.6b). |
+| `--chunk-tokens N` | Token budget per chunk (default 300; bge-small's limit is 512). |
 | `--overlap N` | Tokens of overlap between consecutive chunks (default 15%). |
 | `--rebuild` | Ignore existing state; required to change model, chunking or reader options. |
 | `--max-mb N` | Skip files larger than N MB (default 50). |
@@ -87,7 +84,7 @@ JSON output: `added`, `changed`, `removed` (paths), `unchanged` (count), `chunks
 | `--group-by-file` | Best chunk per file. |
 
 The query is embedded with the model's query prompt (bge: "Represent this sentence for searching relevant
-passages: "; qwen3: its `query` prompt). Documents are embedded without one.
+passages: "). Documents are embedded without one.
 
 ## `sem similar ITEM`
 
@@ -102,7 +99,7 @@ model if the index exists, otherwise `--model` or the default. For two files, it
 
 ## `sem dupes`
 
-Near-duplicate chunk pairs at cosine ≥ `--threshold` (default per model: bge-small 0.95, qwen3-0.6b 0.92).
+Near-duplicate chunk pairs at cosine ≥ `--threshold` (default 0.95 for bge-small).
 Tiled matrix multiply, so memory stays bounded. `--across-files-only` ignores pairs within one file. `--limit N`
 controls how many pairs are printed (default 50; `total_pairs` always has the full count).
 
@@ -139,15 +136,14 @@ update) · all indexes in `./.sem` · delete an index.
 
 | Variable | Effect |
 |---|---|
-| `SEM_DEVICE` | `auto` / `cpu` / `mps`. |
 | `SEM_INDEX` | Default index name. |
 | `SEM_MODEL` | Default model key for new indexes and `embed`. |
-| `SEM_BATCH_SIZE` | Starting batch size (default 64 on mps, 32 on cpu; halves on out-of-memory). |
+| `SEM_BATCH_SIZE` | Embedding batch size (default 32). |
+| `SEM_THREADS` | ONNX Runtime threads (default: all cores). |
 | `SEM_QUIET=1` | No progress output. |
-| `SEM_PROBE_TIMEOUT` | Metal probe timeout in seconds (default 20). |
 
-The wrapper sets `SEM_HOME=./.sem`, points `TMPDIR`, `XDG_CACHE_HOME` and `TORCH_HOME` into it, and sets
-`HF_HUB_OFFLINE=1` and `TRANSFORMERS_OFFLINE=1`. The process also refuses non-local socket connections.
+The wrapper sets `SEM_HOME=./.sem` and points `TMPDIR` and `XDG_CACHE_HOME` into it. Embedding runs on the CPU
+with ONNX Runtime. The process refuses non-local socket connections.
 
 ## On-disk format (`.sem/indexes/<name>/`)
 

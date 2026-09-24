@@ -20,7 +20,7 @@ def fake_runtime(tmp_path):
     rt = tmp_path / "rt"
     rt.mkdir()
     (rt / "models").mkdir()
-    (rt / "venv").symlink_to(Path(sys.prefix))  # the venv running the tests
+    (rt / "python").symlink_to(Path(sys.prefix))  # the interpreter running the tests
     (rt / "install.json").write_text("{}")
     return rt
 
@@ -40,9 +40,7 @@ def test_wrapper_sets_project_local_env(tmp_path, fake_runtime):
     assert doc["sem_home"] == str(sem_home)
     assert doc["env"]["TMPDIR"] == str(sem_home / "tmp")
     assert doc["env"]["XDG_CACHE_HOME"] == str(sem_home / "cache")
-    assert doc["env"]["TORCH_HOME"] == str(sem_home / "cache" / "torch")
-    assert doc["env"]["HF_HOME"] == str(fake_runtime / "models")
-    assert doc["network"] == {"guard_active": True, "offline_env": True}
+    assert doc["network"] == {"guard_active": True}
     assert (sem_home / ".gitignore").read_text() == "*\n"
     # no bytecode written into the skill dir
     assert not list((SKILL / "sem").glob("__pycache__/*.cpython-*.pyc.*"))

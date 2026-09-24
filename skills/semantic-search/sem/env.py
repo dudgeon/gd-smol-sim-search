@@ -154,12 +154,5 @@ def network_guard_active() -> bool:
     return False
 
 
-OFFLINE_VARS = ("HF_HUB_OFFLINE", "TRANSFORMERS_OFFLINE")
-
-
-def offline_env_ok() -> bool:
-    return all(os.environ.get(v) == "1" for v in OFFLINE_VARS)
-
-
 def log(msg: str) -> None:
     print(msg, file=sys.stderr, flush=True)

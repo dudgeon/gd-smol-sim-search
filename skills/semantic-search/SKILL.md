@@ -21,7 +21,7 @@ SEM="<this skill's base directory>/bin/sem"   # e.g. ~/.claude/skills/semantic-s
 
 Run `"$SEM" doctor` once. If it prints `PROBLEMS FOUND` or exits non-zero,
 show the problems to the user and stop. Don't try to fix sandbox settings,
-install packages or download models yourself. The fix is for the user to run
+install packages or copy models yourself. The fix is for the user to run
 `./setup.sh` in their own terminal.
 
 ## 2. Workflow
@@ -31,7 +31,7 @@ install packages or download models yourself. The fix is for the user to run
    is cheap.
 2. **Query or analyse** with `--json` and parse the result. Progress and logs
    go to stderr; stdout holds exactly one JSON document. Every JSON document
-   has `ok`, `command` and `device`; on failure it has `error`.
+   has `ok` and `command`; on failure it has `error`.
 3. Use `--index <name>` to keep separate corpora apart (default `default`).
 
 Structured data: `--text-cols title,body --id-col id` for CSV/TSV, and
@@ -79,8 +79,6 @@ corpus median (`outliers` reports it). Dupe thresholds default per model. See
 - Never attempt network access. Never propose disabling the sandbox,
   `dangerouslyDisableSandbox`, excluded commands, or settings edits to make
   `sem` work. If `sem` can't do something inside the sandbox, say so.
-- If the output says the device is `cpu` because Metal is unavailable,
-  mention it **once** (indexing is slower) and carry on. It is not an error.
 - If the cwd isn't writable, `sem` says so. Ask the user which project
   directory to work in.
 
@@ -89,7 +87,7 @@ corpus median (`outliers` reports it). Dupe thresholds default per model. See
 Before answering from an index, run `"$SEM" index <same paths> --json` again
 if files may have changed. Only changed files are re-embedded (see `changed`
 and `chunks_embedded` in the output). An index is tied to one model: querying
-with a different `--model` fails on purpose. Use a new `--index` name or
+with a different model fails on purpose. Use a new `--index` name or
 `--rebuild`.
 
 ## Examples

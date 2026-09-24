@@ -1,4 +1,4 @@
-"""End-to-end CLI tests with the hash test model (no torch, no download)."""
+"""End-to-end CLI tests with the hash test model (no model files)."""
 
 from __future__ import annotations
 
@@ -17,7 +17,6 @@ def test_index_and_json_contract(sem, project):
     assert res["files_seen"] == 10
     assert len(res["added"]) == 10
     assert res["chunks_embedded"] > 10
-    assert "device" in res
     assert (project / ".sem" / ".gitignore").read_text() == "*\n"
     for f in ("manifest.json", "vectors.f16.npy", "meta.sqlite"):
         assert (project / ".sem" / "indexes" / "default" / f).exists()
@@ -204,10 +203,9 @@ def test_missing_index_and_bad_path(sem):
     assert res["ok"] is False and "path not found" in res["error"]
 
 
-def test_human_output_reports_device(sem):
+def test_human_output(sem):
     sem("index", "fx")
     p = sem("search", "tides")
-    assert "[device: cpu]" in p.stderr
     assert "fx/docs/tides.md" in p.stdout
 
 

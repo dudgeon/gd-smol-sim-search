@@ -1,121 +1,91 @@
-"""Tests on the real torch / sentence-transformers path.
+"""Tests with the real, vendored bge-small model (ONNX Runtime on CPU).
 
-* tiny-bert: a random-weight model built locally, so these always run when torch is available.
-* bge-small golden tests: run when a real runtime is installed (``./setup.sh``), found at the default
-  locations or via ``SEM_TEST_RUNTIME``.
+The model is assembled from vendor/models/ exactly as setup.sh does, so these always run
+when onnxruntime and tokenizers are installed (see tools/requirements-dev.txt).
 """
 
 from __future__ import annotations
 
+import shutil
+import sqlite3
+
 import pytest
 
-pytest.importorskip("torch")
-pytest.importorskip("sentence_transformers")
+pytest.importorskip("onnxruntime")
+pytest.importorskip("tokenizers")
 
-from conftest import DUPE_PAIR, GOLDEN, Sem, base_env, find_runtime  # noqa: E402
-from tiny_model import build_tiny_model, tiny_registry  # noqa: E402
-
-FIXTURES_DIR = __import__("conftest").FIXTURES
+from conftest import DUPE_PAIR, FIXTURES, GOLDEN, Sem, assemble_vendored_model, base_env  # noqa: E402
 
 
 @pytest.fixture(scope="session")
-def tiny_runtime(tmp_path_factory):
-    rt = tmp_path_factory.mktemp("tiny-rt")
-    (rt / "models").mkdir()
-    build_tiny_model(rt / "models", FIXTURES_DIR)
-    tiny_registry(rt / "registry.json")
-    return rt
-
-
-@pytest.fixture
-def tiny_sem(project, tiny_runtime):
-    env = base_env(project)
-    env.update({"SEM_REGISTRY": str(tiny_runtime / "registry.json"),
-                "SEM_MODELS_DIR": str(tiny_runtime / "models")})
-    return Sem(project, env)
-
-
-def test_tiny_model_end_to_end(tiny_sem):
-    res = tiny_sem.json("index", "fx", "--device", "cpu")
-    assert res["model"] == "tiny-bert" and res["device"] == "cpu"
-    assert res["chunks_embedded"] > 10
-    for cmd in (["search", "tides"], ["similar", "fx/docs/tides.md"], ["compare", "fx/docs/tides.md", "fx/code/fib.py"],
-                ["dupes"], ["cluster", "--k", "3"], ["outliers"], ["embed", "hello", "--query"]):
-        out = tiny_sem.json(*cmd, "--device", "cpu")
-        assert out["ok"] and out["device"] == "cpu", cmd
-
-
-@pytest.mark.parametrize("mode", ["fail", "crash"])
-def test_every_command_works_when_metal_probe_fails(tiny_sem, mode):
-    env = {"SEM_PROBE_SIMULATE": mode, "SEM_PROBE_TIMEOUT": "5"}
-    res = tiny_sem.json("index", "fx", env=env)
-    assert res["device"] == "cpu" and res["chunks_embedded"] > 0
-    for cmd in (["search", "tides"], ["compare", "--text", "a", "b"], ["embed", "x"]):
-        out = tiny_sem.json(*cmd, env=env)
-        assert out["ok"] and out["device"] == "cpu"
-        assert "Metal unavailable" in out["device_note"]
-
-
-def test_token_budget_respected(tiny_sem, project):
-    tiny_sem("index", "fx", "--device", "cpu", "--chunk-tokens", "40", "--overlap", "5")
-    from sentence_transformers import SentenceTransformer
-    import sqlite3
-    conn = sqlite3.connect(project / ".sem/indexes/default/meta.sqlite")
-    texts = [t for (t,) in conn.execute("SELECT text FROM chunks WHERE deleted=0")]
-    tok = SentenceTransformer(tiny_sem.env["SEM_MODELS_DIR"] + "/tiny-bert", device="cpu").tokenizer
-    over = [t for t in texts if len(tok(t, add_special_tokens=False)["input_ids"]) > 40]
-    assert not over
-
-
-def test_revision_mismatch_is_an_error(tiny_sem, tiny_runtime, project):
-    tiny_sem("index", "fx", "--device", "cpu")
-    rev = tiny_runtime / "models" / "tiny-bert" / ".sem-revision"
-    old = rev.read_text()
-    try:
-        rev.write_text("something-else\n")
-        res = tiny_sem.json("search", "tides", check=False)
-        assert res["ok"] is False and "Rebuild" in res["error"]
-    finally:
-        rev.write_text(old)
-
-
-# --- real model --------------------------------------------------------------------
-
-REAL_RT = find_runtime()
-real = pytest.mark.skipif(REAL_RT is None or not (REAL_RT / "models" / "bge-small").exists(),
-                          reason="bge-small runtime not installed (run ./setup.sh)")
+def models_dir(tmp_path_factory):
+    return assemble_vendored_model(tmp_path_factory.mktemp("models"))
 
 
 @pytest.fixture(scope="module")
-def bge_project(tmp_path_factory):
-    import shutil
+def bge(tmp_path_factory, models_dir):
     p = tmp_path_factory.mktemp("bge") / "proj"
     p.mkdir()
-    shutil.copytree(FIXTURES_DIR, p / "fx")
+    shutil.copytree(FIXTURES, p / "fx")
     env = base_env(p)
-    env.update({"SEM_RUNTIME": str(REAL_RT)})
+    env["SEM_MODELS_DIR"] = str(models_dir)
     s = Sem(p, env)
     s("index", "fx")
     return s
 
 
-@real
 @pytest.mark.parametrize("query,expected", GOLDEN)
-def test_bge_golden(bge_project, query, expected):
-    res = bge_project.json("search", query, "-k", "3")
+def test_golden_top1(bge, query, expected):
+    res = bge.json("search", query, "-k", "3")
     paths = [r["path"] for r in res["results"]]
     assert paths[0].endswith(expected), (query, paths)
 
 
-@real
-def test_bge_dupes_and_similar(bge_project):
-    d = bge_project.json("dupes", "--across-files-only")
+def test_dupes_and_similar(bge):
+    d = bge.json("dupes", "--across-files-only")
     assert {tuple(sorted((p["a"]["path"], p["b"]["path"]))) for p in d["pairs"]} == {DUPE_PAIR}
-    s = bge_project.json("similar", "fx/docs/tides.md", "--group-by-file", "-k", "1")
+    s = bge.json("similar", "fx/docs/tides.md", "--group-by-file", "-k", "1")
     assert s["results"][0]["path"] == "fx/notes/moon-notes.md"
 
 
-@real
-def test_bge_other_model_rejected(bge_project):
-    res = bge_project.json("search", "x", "--model", "qwen3-0.6b", check=False)
+def test_known_scores(bge):
+    # regression guard: these match sentence-transformers on the same model to 4 decimals
+    para = bge.json("compare", "--text", "the cat sat on the mat", "a feline rested on the rug")
+    far = bge.json("compare", "--text", "the cat sat on the mat", "quarterly revenue grew 8 percent")
+    assert para["score"] == pytest.approx(0.7484, abs=2e-3)
+    assert far["score"] == pytest.approx(0.3728, abs=2e-3)
+
+
+def test_all_commands(bge):
+    for cmd in (["similar", "fx/code/fib.py:9"], ["compare", "fx/docs/tides.md", "fx/code/fib.py"],
+                ["cluster", "--level", "file", "--k", "auto"], ["outliers"], ["info"], ["embed", "hi", "--query"]):
+        assert bge.json(*cmd)["ok"], cmd
+    v = bge.json("embed", "hello")
+    assert v["dim"] == 384
+
+
+def test_token_budget_respected(bge, models_dir):
+    from tokenizers import Tokenizer
+    tok = Tokenizer.from_file(str(models_dir / "bge-small" / "tokenizer.json"))
+    tok.no_truncation()
+    bge("index", "fx", "--index", "small", "--chunk-tokens", "40", "--overlap", "5")
+    conn = sqlite3.connect(bge.project / ".sem/indexes/small/meta.sqlite")
+    texts = [t for (t,) in conn.execute("SELECT text FROM chunks WHERE deleted=0")]
+    assert texts
+    assert all(len(tok.encode(t, add_special_tokens=False).ids) <= 40 for t in texts)
+
+
+def test_other_model_rejected(bge):
+    res = bge.json("search", "x", "--model", "hash-test", check=False)
     assert res["ok"] is False and "built with model 'bge-small'" in res["error"]
+
+
+def test_revision_mismatch_is_an_error(bge, models_dir):
+    rev = models_dir / "bge-small" / ".sem-revision"
+    old = rev.read_text()
+    try:
+        rev.write_text("something-else\n")
+        res = bge.json("search", "tides", check=False)
+        assert res["ok"] is False and "Rebuild" in res["error"]
+    finally:
+        rev.write_text(old)

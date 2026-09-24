@@ -1,0 +1,38 @@
+{
+  "comment": "Inputs for tools/build_vendor.py. Every file is pinned by exact name and checked against the checksum its upstream publishes. Edit, then rebuild vendor/.",
+  "python": {
+    "version": "3.12.14",
+    "release": "20260901",
+    "base_url": "https://github.com/astral-sh/python-build-standalone/releases/download/20260901/",
+    "files": {
+      "macos-arm64": "cpython-3.12.14+20260901-aarch64-apple-darwin-install_only_stripped.tar.gz",
+      "linux-x86_64": "cpython-3.12.14+20260901-x86_64-unknown-linux-gnu-install_only_stripped.tar.gz"
+    }
+  },
+  "wheels": {
+    "macos-arm64": [
+      "onnxruntime-1.30.0-cp312-cp312-macosx_14_0_arm64.whl",
+      "tokenizers-0.23.2-cp310-abi3-macosx_11_0_arm64.whl",
+      "numpy-2.5.3-cp312-cp312-macosx_14_0_arm64.whl",
+      "pypdf-6.19.0-py3-none-any.whl"
+    ],
+    "linux-x86_64": [
+      "onnxruntime-1.30.0-cp312-cp312-manylinux_2_28_x86_64.whl",
+      "tokenizers-0.23.2-cp310-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl",
+      "numpy-2.5.3-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+      "pypdf-6.19.0-py3-none-any.whl"
+    ]
+  },
+  "model": {
+    "key": "bge-small",
+    "repo_id": "BAAI/bge-small-en-v1.5",
+    "revision": "5c38ec7c405ec4b44b94cc5a9bb96e735b38267a",
+    "license": "MIT",
+    "files": {
+      "onnx/model.onnx": "model.onnx",
+      "tokenizer.json": "tokenizer.json",
+      "README.md": "MODEL_CARD.md"
+    },
+    "split_mb": 45
+  }
+}
