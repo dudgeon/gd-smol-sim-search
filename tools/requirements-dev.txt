@@ -1,0 +1,2 @@
+# Dev-only: test runner. Not part of the runtime lock.
+pytest==9.1.1

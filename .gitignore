@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+.sem/
+# written by ./setup.sh --link --runtime-dir <dir>
+skills/semantic-search/.runtime-path
+# never commit a runtime (venv, Python, model weights) into the repo
+runtime/
