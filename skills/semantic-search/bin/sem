@@ -48,6 +48,9 @@ export TMPDIR="$SEM_HOME/tmp"
 export XDG_CACHE_HOME="$SEM_HOME/cache"
 export PYTHONDONTWRITEBYTECODE=1 PYTHONNOUSERSITE=1
 export TOKENIZERS_PARALLELISM=false
+# onnxruntime >= 1.30 embeds Microsoft 1DS telemetry on macOS; it initialises at import,
+# so it must be disabled by env var, before Python code runs (see sem/embed.py).
+export ORT_DISABLE_TELEMETRY=1
 export PYTHONPATH="$SKILL_DIR${PYTHONPATH:+:$PYTHONPATH}"
 
 # -P: don't put the cwd on sys.path (a project's own "sem" package must not shadow ours)

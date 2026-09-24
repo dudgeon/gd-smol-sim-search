@@ -59,7 +59,7 @@ Re-running it only verifies what's installed. It doesn't modify `~/.claude/setti
 | Sandbox rule | How `sem` complies |
 |---|---|
 | Writes only under the current directory | Indexes, caches and temp files live in `./.sem/`, and the wrapper points `TMPDIR` and `XDG_CACHE_HOME` into it. The skill and runtime directories are only read (bytecode is precompiled and `PYTHONDONTWRITEBYTECODE=1`). `./.sem/` gets its own `.gitignore` (`*`). |
-| No network | The model loads from a local file, and the Python process refuses every non-local socket connection. `sem doctor` reports it. |
+| No network | The model loads from a local file, and the Python process refuses every non-local socket connection (`sem doctor` reports it). onnxruntime's macOS build ships Microsoft telemetry that phones home from native code; `sem` disables it before the library loads (`ORT_DISABLE_TELEMETRY=1`), verified by a before/after listing of `~/Library/Caches`. |
 | No GPU / IOKit access needed | Embedding runs on the CPU with ONNX Runtime. There's no Metal, so nothing depends on what the sandbox allows for the GPU. bge-small is small enough that the CPU is fast. |
 | No escapes | No `dangerouslyDisableSandbox`, no excluded commands, no settings edits. |
 
@@ -103,16 +103,17 @@ This ONNX Runtime setup produces the same vectors as the sentence-transformers/P
 
 ## Performance
 
-These figures were measured on the development machine (Linux x86-64, 4 vCPU), **not** yet on an M-series Mac:
+Measured on an Apple Silicon Mac (macOS 26):
 
 | Operation | Result |
 |---|---|
-| `./setup.sh` (fresh, offline) | about 11 s |
-| Index with bge-small | about 31 chunks/s with dense 300-token chunks (8,000 in 257 s); short entries are much faster (the 19-chunk test fixtures take about 1 s) |
-| One `search` command, start to finish, including model load | about 0.55 s |
-| Search over 100k chunks (after load) | about 0.15 s |
-| `dupes` over 100k chunks (tiled, bounded memory) | about 29 s |
-| Commands that don't embed text (`similar`, `dupes`, `cluster`, `outliers`, `info`) | start in about 0.2 s; they load no model |
+| Index with bge-small | about 34 chunks/s on dense 300-token chunks (8,000 in 235 s); short entries are much faster (the 19-chunk test fixtures index in 0.8 s) |
+| One `search` command, start to finish, including model load | about 0.25 s |
+| `dupes` over 8,000 chunks | about 2 s |
+| Commands that don't embed text (`similar`, `dupes`, `cluster`, `outliers`, `info`) | about 0.15 s; they load no model |
+
+On a 4-vCPU Linux dev box: search over 100k chunks takes 0.15 s after load, and `dupes` over 100k chunks
+(tiled, bounded memory) about 29 s.
 
 ## Troubleshooting
 

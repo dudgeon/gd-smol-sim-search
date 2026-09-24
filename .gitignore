@@ -6,3 +6,4 @@ __pycache__/
 skills/semantic-search/.runtime-path
 # never commit a runtime (venv, Python, model weights) into the repo
 runtime/
+.venv-dev/

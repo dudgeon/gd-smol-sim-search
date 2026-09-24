@@ -92,8 +92,16 @@ class OnnxEmbedder(Embedder):
     """
 
     def __init__(self, spec: dict, model_dir: Path):
+        # onnxruntime 1.30's macOS wheel ships Microsoft 1DS telemetry that initialises at
+        # import and later POSTs to mobile.events.data.microsoft.com from native code,
+        # past the Python socket guard, writing ~/Library/Caches/python3/ (observed on
+        # macOS 26). Only this env var, set before the import, prevents it;
+        # disable_telemetry_events() after import is too late for the init event.
+        os.environ.setdefault("ORT_DISABLE_TELEMETRY", "1")
         import onnxruntime as ort
         from tokenizers import Tokenizer
+
+        ort.disable_telemetry_events()  # belt and braces for later per-session events
 
         self.spec = spec
         self.key = spec["key"]

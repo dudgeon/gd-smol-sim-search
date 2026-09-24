@@ -41,7 +41,12 @@ tests/                           pytest; fixtures/ is the golden dataset
 - **Keep every vendored file under 50 MB** (GitHub warns at 50 MB and rejects at 100 MB). No Git LFS: a plain clone
   must work. `build_vendor.py` splits large files (`split_mb`), and `setup.sh` joins them.
 - **Runtime writes only under `$SEM_HOME` (`./.sem`).** Never write to the skill dir, the runtime dir or `~`.
-- **No network at runtime.** `cli.main()` installs a socket guard.
+- **No network at runtime.** `cli.main()` installs a socket guard — but that only covers Python. onnxruntime's
+  macOS wheel embeds Microsoft 1DS telemetry in native code (it POSTed to mobile.events.data.microsoft.com and
+  wrote `~/Library/Caches/python3/` during indexing, observed on macOS 26 / ORT 1.30). `ORT_DISABLE_TELEMETRY=1`
+  must be set **before** `import onnxruntime` (embed.py does; bin/sem too); the
+  `disable_telemetry_events()` API after import is too late. When bumping the onnxruntime wheel, re-run the
+  `~/Library/Caches` before/after check on a Mac.
 - **Keep numpy-only commands light.** Only commands that embed text (`index`, `search`, `compare --text`,
   `embed`) may import onnxruntime/tokenizers.
 - **The model is part of the index identity.** `manifest.json` records key + revision. Keep
@@ -50,6 +55,8 @@ tests/                           pytest; fixtures/ is the golden dataset
   no `${var,,}`. Guard empty arrays with `${arr[@]+"${arr[@]}"}`.
 - **Runtime dependencies are exactly the four vendored wheels**, installed with `--no-deps`. Adding one means
   adding its wheel (and any of its runtime deps) to `tools/vendor.json`, with a reason recorded here.
+  onnxruntime declares `flatbuffers` and `protobuf` as dependencies, but CPU inference doesn't import them;
+  the test suite runs without them on purpose.
 
 ## Why ONNX Runtime and not PyTorch
 
@@ -101,7 +108,8 @@ test hooks: `SEM_REGISTRY` (alternate models.json), `SEM_MODELS_DIR` (alternate 
 
 ## Build notes
 
-- Built and tested in a Linux container: the full offline `setup.sh` install/re-run/link/uninstall cycle, run in a
-  network namespace with **no network**, from a Linux vendor bundle built with the same script and pins. The
-  sandbox was simulated with a mount + network namespace (read-only home, writable project, no network). What
-  remains to verify on a real Mac: the macOS bundle installing and running (same code path, different binaries).
+- Built and tested in a Linux container (offline install/re-run/link/uninstall cycle in a no-network namespace;
+  sandbox simulated with mount + network namespaces), then verified on a real Apple Silicon Mac (macOS 26):
+  fresh offline install with passing self-test, all 53 tests, golden queries, and the write-isolation check
+  (before/after listings of `~/.claude/skills/semantic-search`, `~/.cache`, `~/Library/Caches`). That check is
+  what caught the onnxruntime telemetry above — keep running it after dependency bumps.
