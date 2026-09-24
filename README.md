@@ -1,7 +1,7 @@
 <div align="center">
   <img src="assets/logo.svg" width="250" alt="Clawd the crab in a sandbox, holding a magnifying glass">
   <h1>smol-sim-search</h1>
-  <p><strong>A crab-sized search engine that never leaves the sandbox.</strong><br>
+  <p><strong>A tiny search engine that never leaves the sandbox.</strong><br>
   Local embeddings for Claude Code — simple, lightweight, zero external dependencies.</p>
   <p><sub>stays in the sandbox &nbsp;·&nbsp; nothing to download &nbsp;·&nbsp; pail included</sub></p>
 </div>
