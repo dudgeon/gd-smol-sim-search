@@ -12,8 +12,8 @@ and outliers. Claude does the summarising; the `sem` CLI finds the relevant piec
 and offline** on your Mac. There are no servers, API keys, or network access, **including during install**.
 
 ```bash
-git clone https://github.com/dudgeon/gd-smol-sim-search
-cd gd-smol-sim-search
+git clone https://github.com/dudgeon/smol-sim-search
+cd smol-sim-search
 ./setup.sh
 ```
 
@@ -83,7 +83,7 @@ Re-running it only verifies what's installed. It doesn't modify `~/.claude/setti
 The clone is the distribution, so updating is a `git pull` — never a download by the tool itself:
 
 ```bash
-cd gd-smol-sim-search
+cd smol-sim-search
 git pull
 ./setup.sh        # refreshes only what changed; --update forces a full refresh
 ```
