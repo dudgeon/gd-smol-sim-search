@@ -21,7 +21,8 @@ cp ../smol-sim-search/video/scene.smol.js src/scenes/smol.js
 cp ../smol-sim-search/video/gen_vo.py vo/gen_vo.py && python3 vo/gen_vo.py        # writes vo/voiceover.wav
 # set PROJECT = { duration: 100.25, bpm: 96, offset: 0, audio: 'vo/voiceover.wav' } in src/config.js
 # point studio.html's scene <script> at src/scenes/smol.js
-node render.mjs --frames --workers=4 && node render.mjs --encode --out=out/video.mp4
+node render.mjs --frames --workers=4
+node render.mjs --encode --out=out/video.mp4 --audio=vo/voiceover.wav   # NB: --encode only muxes audio if --audio is passed
 ```
 
 ## Embedding it in the README
