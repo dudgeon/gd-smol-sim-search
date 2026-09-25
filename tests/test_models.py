@@ -58,7 +58,8 @@ def test_known_scores(bge):
 
 def test_all_commands(bge):
     for cmd in (["similar", "fx/code/fib.py:9"], ["compare", "fx/docs/tides.md", "fx/code/fib.py"],
-                ["cluster", "--level", "file", "--k", "auto"], ["outliers"], ["info"], ["embed", "hi", "--query"]):
+                ["cluster", "--level", "file", "--k", "auto"], ["outliers"], ["info"], ["embed", "hi", "--query"],
+                ["neighbors", "-k", "3"], ["neighbors", "--level", "file", "-k", "2"]):
         assert bge.json(*cmd)["ok"], cmd
     v = bge.json("embed", "hello")
     assert v["dim"] == 384
@@ -73,6 +74,15 @@ def test_token_budget_respected(bge, models_dir):
     texts = [t for (t,) in conn.execute("SELECT text FROM chunks WHERE deleted=0")]
     assert texts
     assert all(len(tok.encode(t, add_special_tokens=False).ids) <= 40 for t in texts)
+
+
+def test_neighbors_agrees_with_similar_and_dupes(bge):
+    res = bge.json("neighbors", "-k", "3")
+    moon = next(i for i in res["items"] if i["path"] == "fx/notes/moon-notes.md")
+    assert moon["neighbors"][0]["path"] == "fx/docs/tides.md"
+    assert moon["neighbors"][0]["score"] == pytest.approx(0.989, abs=2e-3)  # the dupes pair's score
+    sim = bge.json("similar", moon["chunk_id"], "-k", "3")
+    assert [n["chunk_id"] for n in moon["neighbors"]] == [h["chunk_id"] for h in sim["results"]]
 
 
 def test_other_model_rejected(bge):

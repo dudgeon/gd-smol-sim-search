@@ -174,3 +174,36 @@ def test_unicode_line_separators_do_not_shift_line_numbers():
     all_units = [(u.text, u.start_line) for s in md for u in s.units]
     assert ("para one", 3) in all_units
     assert ("para two", 7) in all_units
+
+
+def test_blocked_topk_matches_brute_force():
+    rng = np.random.default_rng(7)
+    X = analyze._normalize(rng.normal(size=(53, 16)).astype(np.float32))
+    S = X @ X.T
+    np.fill_diagonal(S, -np.inf)
+    for rb, cb in [(7, 11), (53, 53), (64, 8)]:
+        scores, pos = analyze._blocked_topk(53, 5, lambda a, b: X[a:b],
+                                            row_block=rb, col_block=cb)
+        for i in range(53):
+            want = np.sort(S[i])[::-1][:5]
+            assert np.allclose(scores[i], want, atol=1e-6), (rb, cb, i)
+            # returned positions really carry the returned scores, no self
+            assert i not in pos[i]
+            assert np.allclose(S[i][pos[i]], scores[i], atol=1e-6)
+            assert list(scores[i]) == sorted(scores[i], reverse=True)
+
+
+def test_blocked_topk_group_exclusion_and_padding():
+    rng = np.random.default_rng(1)
+    X = analyze._normalize(rng.normal(size=(12, 8)).astype(np.float32))
+    groups = np.array([0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 2])
+    scores, pos = analyze._blocked_topk(12, 8, lambda a, b: X[a:b], groups,
+                                        row_block=5, col_block=4)
+    for i in range(12):
+        valid = pos[i][pos[i] >= 0]
+        assert all(groups[j] != groups[i] for j in valid)
+        # the lone member of group 2 has 11 cross-group candidates; group 0 members have 7
+        expect = (groups != groups[i]).sum()
+        assert len(valid) == min(8, expect)
+        # padding sits at the end with -inf scores
+        assert all(s == -np.inf for s, p in zip(scores[i], pos[i]) if p < 0)

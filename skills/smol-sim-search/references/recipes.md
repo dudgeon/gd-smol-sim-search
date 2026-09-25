@@ -86,6 +86,26 @@ $SEM similar <chunk_id> --path-glob "docs/*" --json            # neighbours, res
 `similar` excludes the item itself (for a file: all of its chunks). Chaining is the drill-down pattern:
 cluster or search first, then `similar <chunk_id>` on an interesting hit.
 
+## Neighbour lists for every item at once
+
+`similar` answers one item per call; `neighbors` answers all of them in one pass — never loop `similar` over a
+corpus. This is the tool for building a similarity graph, precomputing "related items" for every record, or
+feeding a downstream link analysis:
+
+```bash
+$SEM neighbors -k 20 --json > neighbors.json          # every chunk/record, top 20 each
+$SEM neighbors --level file -k 5 --json               # file-to-file graph
+$SEM neighbors -k 10 --min-score 0.6 --json           # sparser graph: drop weak edges
+```
+
+- Output is identity + score only by default (`--snippet N` adds text): join back via `chunk_id`, or read the
+  file at `path`/`locator`. This keeps n×k output compact enough to parse whole.
+- It is exact and memory-bounded (about a minute for 100k chunks; ~2 s for 12k), so there is no reason to
+  read `.sem/` vectors directly — treat the on-disk format as internal.
+- `dupes` stays the right tool for threshold-gated duplicate *pairs*; `neighbors` gives ranked lists per item.
+- Prose indexed with overlap: add `--across-files-only`, or adjacent chunks of each file will top every list.
+  Record corpora (CSV/JSONL) should leave it off — all records live in one file.
+
 ## Two corpora in one project
 
 Keep them in separate indexes; vectors from one index are comparable with each other, not across models:

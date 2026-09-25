@@ -280,6 +280,27 @@ def cmd_cluster(ctx: Ctx):
     return res, "\n".join(lines), 0
 
 
+def cmd_neighbors(ctx: Ctx):
+    from .analyze import neighbors
+    a = ctx.args
+    idx = _open(ctx)
+    res = {"index": idx.name, "model": idx.model_key,
+           **neighbors(idx, a.level, a.k, a.min_score, a.across_files_only, a.snippet)}
+    lines = [f"top {res['k']} neighbours for each of {res['items_total']} {a.level}s:"]
+    for it in res["items"]:
+        if a.level == "chunk":
+            head = f"{it['path']} {it['locator']} [{it['chunk_id']}]"
+            nbs = " · ".join(
+                f"{nb['score']:.3f} " + (f"{nb['locator']}" if nb['path'] == it['path']
+                                         else f"{nb['path']} {nb['locator']}") + f" [{nb['chunk_id']}]"
+                for nb in it["neighbors"])
+        else:
+            head = it["path"]
+            nbs = " · ".join(f"{nb['score']:.3f} {nb['path']}" for nb in it["neighbors"])
+        lines.append(f"{head}:  {nbs}" if nbs else f"{head}:  (none)")
+    return res, "\n".join(lines), 0
+
+
 def cmd_outliers(ctx: Ctx):
     from .analyze import outliers
     a = ctx.args
@@ -407,6 +428,15 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--max-members", type=int, default=50, help="members listed per cluster (0 = all)")
     s.add_argument("--reps", type=int, default=3, help="representatives per cluster")
     s.set_defaults(fn=cmd_cluster)
+
+    s = sub.add_parser("neighbors", parents=[common], help="top-k neighbours for every item at once")
+    s.add_argument("--level", choices=["chunk", "file"], default="chunk")
+    s.add_argument("-k", type=int, default=10, help="neighbours per item (default 10)")
+    s.add_argument("--min-score", type=float, help="drop neighbours below this cosine")
+    s.add_argument("--across-files-only", action="store_true",
+                   help="chunk level: exclude neighbours from the item's own file")
+    # bulk output: no text by default (identity + score); --snippet N adds snippets
+    s.set_defaults(fn=cmd_neighbors, snippet=0)
 
     s = sub.add_parser("outliers", parents=[common], help="least typical items")
     s.add_argument("--level", choices=["chunk", "file"], default="chunk")

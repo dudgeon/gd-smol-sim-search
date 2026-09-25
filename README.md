@@ -123,6 +123,7 @@ $SEM compare docs/a.md docs/b.md             # plus the best-matching chunk pair
 $SEM dupes --across-files-only
 $SEM cluster --level file --k auto
 $SEM outliers --level file
+$SEM neighbors -k 20 --json                  # ranked top-20 neighbors for every item, one pass
 $SEM index tickets.jsonl --index tickets --text-field body.text --id-field id
 ```
 

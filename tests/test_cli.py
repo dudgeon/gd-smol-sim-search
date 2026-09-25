@@ -232,3 +232,50 @@ def test_unwritable_cwd(project, sem):
         assert p.returncode != 0 and "cd into a project directory" in p.stderr
     finally:
         os.chmod(ro, 0o755)
+
+
+def test_neighbors_bulk(sem):
+    sem("index", "fx")
+    info = sem.json("info")
+    res = sem.json("neighbors", "-k", "3")
+    assert res["level"] == "chunk" and res["k"] == 3
+    assert res["items_total"] == len(res["items"]) == info["chunks"]
+    for it in res["items"]:
+        ids = [nb["chunk_id"] for nb in it["neighbors"]]
+        assert it["chunk_id"] not in ids and len(ids) == len(set(ids)) == 3
+        scores = [nb["score"] for nb in it["neighbors"]]
+        assert scores == sorted(scores, reverse=True)
+        assert "text" not in it and all("text" not in nb for nb in it["neighbors"])
+    # the planted near-duplicates are each other's top neighbour
+    tides = next(i for i in res["items"] if i["path"] == "fx/docs/tides.md" and i["locator"] == "L9-13")
+    moon = next(i for i in res["items"] if i["path"] == "fx/notes/moon-notes.md")
+    assert tides["neighbors"][0]["chunk_id"] == moon["chunk_id"]
+    assert moon["neighbors"][0]["chunk_id"] == tides["chunk_id"]
+
+
+def test_neighbors_matches_similar(sem):
+    sem("index", "fx")
+    res = sem.json("neighbors", "-k", "4")
+    it = next(i for i in res["items"] if i["path"] == "fx/docs/sourdough.md")
+    sim = sem.json("similar", it["chunk_id"], "-k", "4")
+    assert [n["chunk_id"] for n in it["neighbors"]] == [h["chunk_id"] for h in sim["results"]]
+    assert [n["score"] for n in it["neighbors"]] == [h["score"] for h in sim["results"]]
+
+
+def test_neighbors_options(sem, project):
+    sem("index", "fx")
+    afo = sem.json("neighbors", "-k", "2", "--across-files-only")
+    for it in afo["items"]:
+        assert all(nb["path"] != it["path"] for nb in it["neighbors"])
+    filt = sem.json("neighbors", "-k", "5", "--min-score", "0.5")
+    nonempty = [i for i in filt["items"] if i["neighbors"]]
+    assert {i["path"] for i in nonempty} == {"fx/docs/tides.md", "fx/notes/moon-notes.md"}
+    snip = sem.json("neighbors", "-k", "1", "--snippet", "30")
+    assert all(len(nb["text"]) <= 32 for i in snip["items"] for nb in i["neighbors"])
+    files = sem.json("neighbors", "--level", "file", "-k", "2")
+    assert files["items_total"] == 10
+    assert {"path", "neighbors"} == set(files["items"][0].keys())
+    # single-file index refuses --across-files-only with a clear error
+    sem("index", "fx/docs/tides.md", "--index", "one")
+    err = sem.json("neighbors", "--across-files-only", "--index", "one", check=False)
+    assert err["ok"] is False and "single file" in err["error"]

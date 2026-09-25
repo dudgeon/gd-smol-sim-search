@@ -95,6 +95,25 @@ Nearest neighbours of an item. It excludes the item itself (for a file, all of t
 (default 10), `--path-glob` (restrict where neighbours may come from), `--group-by-file` (best chunk per file —
 use it for "which *files* are related"). JSON output: `item`, `item_kind` (`chunk` or `file`), `results`.
 
+## `sem neighbors`
+
+Ranked top-k neighbours for **every** item in one pass — the bulk form of `similar`, for building a similarity
+graph or precomputing related-item lists. Exact (no approximation): a blocked computation streams tiles of the
+memory-mapped vectors and keeps a running top-k per row, so memory stays bounded at any corpus size (100k chunks:
+about a minute and about 1 GB; 12k chunks: under 2 s). `outliers` runs on the same core.
+
+| Option | Meaning |
+|---|---|
+| `--level chunk\|file` | Neighbour lists per chunk/record (default) or per file. |
+| `-k N` | Neighbours per item (default 10). |
+| `--min-score X` | Drop neighbours below X; lists may then be shorter than k. |
+| `--across-files-only` | Chunk level: exclude neighbours from the item's own file. Use for prose indexed with overlap (adjacent chunks of one file are trivially similar). Leave off for record files — a CSV/JSONL corpus is one file. |
+| `--snippet N` | **For this command the default is 0 = no text** (identity + score only, keeping n×k output compact). Pass a positive N to include snippets; fetch full text via `chunk_id` with `similar` or the source file. |
+
+JSON: `items` is one entry per item — `{chunk_id, path, locator, heading?, neighbors: [{score, chunk_id, path,
+locator, ...}]}` (file level: `{path, neighbors: [{score, path}]}`), neighbours sorted by descending score.
+`k` in the output is the effective k (capped at items−1). Human output prints one line per item.
+
 ## `sem compare A B [--text] [--pairs N]`
 
 Cosine similarity of two items. With `--text`, A and B are literal strings, both embedded as documents (no query

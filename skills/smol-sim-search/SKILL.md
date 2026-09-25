@@ -64,6 +64,7 @@ dataset into context. `--snippet N` controls how much text each hit carries
 | "find duplicates / copy-paste / redundant records" | `dupes --across-files-only` |
 | "group these by theme / topics" | `cluster --level file --k auto` (or `--level chunk`, `--k 8`) |
 | "what doesn't fit / unusual items" | `outliers --level file -n 10` |
+| "top neighbours for *every* item", "build a similarity graph" | `neighbors -k 10` (bulk `similar`; add `--level file`) |
 | "how big is the index / which model" | `info` · `list` |
 | start over / change model or chunking | `index --rebuild ...` · `drop <name>` |
 
@@ -83,6 +84,11 @@ summarise, instead of reading the corpus into context:
 2. `dupes --across-files-only` — redundancy (`total_pairs` quantifies it),
 3. `outliers` — the unusual items worth opening by hand,
 4. `similar <chunk_id>` / `compare a b` — drill into anything interesting.
+
+For per-item neighbour lists over the whole corpus (a similarity graph, "top
+10 related records for every record"), use `neighbors -k 10 --json` — one
+pass, not one `similar` call per item. Its output omits text by default;
+join back via `chunk_id`.
 
 ## 5. Reading scores
 

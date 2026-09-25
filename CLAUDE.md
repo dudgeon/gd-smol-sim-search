@@ -28,7 +28,8 @@ skills/smol-sim-search/
     embed.py    OnnxEmbedder (onnxruntime + tokenizers, CLS pooling) and HashEmbedder (tests)
     indexer.py  change detection (size/mtime -> sha256), model/chunking compatibility checks
     store.py    index format, tombstones, compaction, crash-safe generation swap
-    analyze.py  search/similar/compare/dupes/cluster/outliers in NumPy
+    analyze.py  search/similar/compare/dupes/cluster/neighbors/outliers in NumPy
+                (neighbors + outliers share _blocked_topk: exact streaming top-k, bounded memory)
     progress.py stderr progress without tqdm
 tests/                           pytest; fixtures/ is the golden dataset
 ```

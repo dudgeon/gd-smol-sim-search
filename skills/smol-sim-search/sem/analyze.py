@@ -352,6 +352,113 @@ def cluster(idx: Index, level: str, k: str | int, seed: int, sample: int,
     return out
 
 
+# --- exact top-k neighbours (shared by `neighbors` and `outliers`) -------------------
+
+def _blocked_topk(n: int, k: int, tile, groups: np.ndarray | None = None,
+                  row_block: int = 2048, col_block: int = BLOCK,
+                  label: str | None = None) -> tuple[np.ndarray, np.ndarray]:
+    """Exact top-k neighbours of every row of the implicit n x n cosine matrix.
+
+    ``tile(a, b)`` returns float32 unit vectors for positions [a, b). The full
+    matrix is never materialised: each row block keeps a running top-k while
+    column tiles stream past, so memory stays bounded at any corpus size.
+    ``groups`` (int per position) excludes same-group candidates; the diagonal
+    is always excluded. Returns ``(scores, pos)``, each ``(n, k)``, rows sorted
+    by descending score; short rows are padded with ``score=-inf, pos=-1``.
+    """
+    k = max(1, min(k, n - 1))
+    out_s = np.empty((n, k), dtype=np.float32)
+    out_p = np.empty((n, k), dtype=np.int64)
+    bar = Progress((n + row_block - 1) // row_block, label) if label else None
+    for a in range(0, n, row_block):
+        A = tile(a, min(a + row_block, n))
+        m = A.shape[0]
+        best_s = np.full((m, k), -np.inf, dtype=np.float32)
+        best_p = np.full((m, k), -1, dtype=np.int64)
+        for t in range(0, n, col_block):
+            S = A @ tile(t, min(t + col_block, n)).T
+            w = S.shape[1]
+            r = np.arange(m)
+            cols = a + r - t
+            ok = (cols >= 0) & (cols < w)
+            S[r[ok], cols[ok]] = -np.inf                       # never your own neighbour
+            if groups is not None:
+                S[groups[a:a + m][:, None] == groups[t:t + w][None, :]] = -np.inf
+            cand = np.concatenate([best_s, S], axis=1)
+            sel = np.argpartition(-cand, k - 1, axis=1)[:, :k]
+            best_s = np.take_along_axis(cand, sel, axis=1)
+            # positions are recovered from sel, so the (m, k+w) index matrix is never built
+            best_p = np.where(sel < k,
+                              np.take_along_axis(best_p, np.minimum(sel, k - 1), axis=1),
+                              t + (sel - k))
+        best_p[np.isneginf(best_s)] = -1   # an excluded candidate is padding, not a neighbour
+        order = np.argsort(-best_s, axis=1, kind="stable")
+        out_s[a:a + m] = np.take_along_axis(best_s, order, axis=1)
+        out_p[a:a + m] = np.take_along_axis(best_p, order, axis=1)
+        if bar:
+            bar.update()
+    if bar:
+        bar.close()
+    return out_s, out_p
+
+
+def _chunk_identities(idx: Index, rows: np.ndarray, with_text: bool) -> dict[int, dict]:
+    """Identity fields per row; text is fetched only when it will be shown."""
+    cols = "row, chunk_id, path, locator, heading" + (", text" if with_text else "")
+    out = {}
+    for rec in idx.conn.execute(f"SELECT {cols} FROM chunks WHERE deleted=0"):
+        d = {"chunk_id": rec[1], "path": rec[2], "locator": rec[3]}
+        if rec[4]:
+            d["heading"] = rec[4]
+        if with_text:
+            d["text"] = rec[5]
+        out[rec[0]] = d
+    return out
+
+
+def neighbors(idx: Index, level: str, k: int, min_score: float | None,
+              across_files_only: bool, snip: int) -> dict:
+    """Ranked top-k neighbour lists for every item, in one pass."""
+    if level == "chunk":
+        rows, codes, names = _alive_paths(idx)
+        n = len(rows)
+        if n < 2:
+            raise SemError("need at least 2 items to compute neighbours")
+        if across_files_only and len(names) < 2:
+            raise SemError("--across-files-only: the index holds a single file, so every "
+                           "neighbour would be excluded")
+        scores, pos = _blocked_topk(n, k, lambda a, b: idx.block(rows[a:b]),
+                                    codes if across_files_only else None, label="neighbours")
+        info = _chunk_identities(idx, rows, with_text=snip > 0)
+
+        def ident(i: int) -> dict:
+            d = dict(info[int(rows[i])])
+            if snip > 0:
+                d["text"] = snippet(d["text"], snip)
+            return d
+    elif level == "file":
+        V, names, _rows = level_vectors(idx, level)
+        n = len(V)
+        if n < 2:
+            raise SemError("need at least 2 items to compute neighbours")
+        scores, pos = _blocked_topk(n, k, lambda a, b: V[a:b], None, label="neighbours")
+
+        def ident(i: int) -> dict:
+            return {"path": names[i]}
+    else:
+        raise SemError("--level must be 'chunk' or 'file'")
+
+    items = []
+    for i in range(n):
+        nb = []
+        for sc, p in zip(scores[i], pos[i]):
+            if p < 0 or (min_score is not None and sc < min_score):
+                break  # rows are sorted by descending score
+            nb.append({"score": round(float(sc), 4), **ident(int(p))})
+        items.append({**ident(i), "neighbors": nb})
+    return {"level": level, "k": int(scores.shape[1]), "items_total": n, "items": items}
+
+
 # --- outliers -----------------------------------------------------------------------
 
 def outliers(idx: Index, level: str, neighbors: int, n_out: int, snip: int) -> dict:
@@ -360,24 +467,8 @@ def outliers(idx: Index, level: str, neighbors: int, n_out: int, snip: int) -> d
     if n < 2:
         raise SemError("need at least 2 items to find outliers")
     kk = min(neighbors, n - 1)
-    mean_sim = np.empty(n, dtype=np.float32)
-    rb, cb = 2048, BLOCK
-    bar = Progress((n + rb - 1) // rb, "neighbours")
-    for s in range(0, n, rb):
-        A = V[s: s + rb]
-        best = np.full((A.shape[0], kk), -np.inf, dtype=np.float32)
-        for t in range(0, n, cb):
-            S = A @ V[t: t + cb].T
-            # exclude self-similarity
-            r = np.arange(A.shape[0])
-            cols = s + r - t
-            ok = (cols >= 0) & (cols < S.shape[1])
-            S[r[ok], cols[ok]] = -np.inf
-            both = np.concatenate([best, S], axis=1)
-            best = np.partition(both, -kk, axis=1)[:, -kk:]
-        mean_sim[s: s + rb] = best.mean(axis=1)
-        bar.update()
-    bar.close()
+    scores, _pos = _blocked_topk(n, kk, lambda a, b: V[a:b], None, label="neighbours")
+    mean_sim = scores.mean(axis=1)
     order = np.argsort(mean_sim)[:n_out]
     info = idx.chunks([labels_src[i] for i in order]) if level == "chunk" else None
     res = []
