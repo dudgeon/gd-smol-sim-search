@@ -12,9 +12,25 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from .chunk import Segment, Unit
-from .env import SemError
+from .env import SemError, log
 
 MAX_BYTES_DEFAULT = 50 * 1024 * 1024
+
+
+def physical_lines(text: str) -> list[str]:
+    """Split on real file newlines only (\n, tolerating \r\n).
+
+    str.splitlines() also breaks on U+2028/U+2029, NEL, VT and FF, which are
+    ordinary characters *inside* a line of a file: using it silently split
+    JSONL records (dropping them as unparseable) and shifted every subsequent
+    line number, corrupting path:line locators (issue #1).
+    """
+    if not text:
+        return []
+    if text.endswith("\n"):
+        text = text[:-1]
+    return [ln[:-1] if ln.endswith("\r") else ln for ln in text.split("\n")]
+
 DEFAULT_EXCLUDE_DIRS = {".git", ".sem", ".venv", "venv", "node_modules", "__pycache__",
                         ".hg", ".svn", ".mypy_cache", ".pytest_cache", ".tox", ".idea"}
 DEFAULT_EXCLUDE_FILES = {".DS_Store"}
@@ -274,7 +290,7 @@ def _paragraph_units(lines: list[str], first_line: int) -> list[Unit]:
 
 
 def read_markdown(text: str) -> list[Segment]:
-    lines = text.splitlines()
+    lines = physical_lines(text)
     segments: list[Segment] = []
     trail: list[tuple[int, str]] = []
     sec_start, in_fence = 0, False
@@ -310,7 +326,7 @@ def read_markdown(text: str) -> list[Segment]:
 
 def read_code(text: str) -> list[Segment]:
     # blank-line separated blocks; packing keeps them aligned to blank lines
-    units = _paragraph_units(text.splitlines(), 1)
+    units = _paragraph_units(physical_lines(text), 1)
     return [Segment(units, "\n\n")] if units else []
 
 
@@ -378,13 +394,14 @@ def _record_segments(records, opts: ReaderOpts, line_of=None) -> list[Segment]:
 
 def read_jsonl(text: str, opts: ReaderOpts) -> list[Segment]:
     records, lines_of = [], []
-    for n, line in enumerate(text.splitlines(), 1):
+    for n, line in enumerate(physical_lines(text), 1):
         if not line.strip():
             continue
         try:
             records.append(json.loads(line))
             lines_of.append(n)
         except ValueError:
+            log(f"sem: JSONL line {n} is not valid JSON; record skipped")
             continue
     return _record_segments(records, opts, lambda i: lines_of[i])
 
@@ -433,7 +450,7 @@ def read_pdf(path: Path) -> list[Segment]:
             text = page.extract_text() or ""
         except Exception:
             text = ""
-        units = [Unit(u.text) for u in _paragraph_units(text.splitlines(), 1)]
+        units = [Unit(u.text) for u in _paragraph_units(physical_lines(text), 1)]
         if units:
             segs.append(Segment(units, "\n\n", page=n))
     return segs

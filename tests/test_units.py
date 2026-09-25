@@ -150,3 +150,27 @@ def test_network_guard_blocks_connections():
     env.pop("SEM_ALLOW_NETWORK", None)
     out = subprocess.run([sys.executable, "-c", code], env=env, capture_output=True, text=True, check=True).stdout
     assert out.split() == ["blocked1", "blocked2", "blocked3", "True"]
+
+
+def test_unicode_line_separators_do_not_drop_jsonl_records():
+    # issue #1: U+2028 etc. are valid inside JSON strings but str.splitlines() breaks on them
+    import json as _json
+    recs = [{"id": "A", "text": "first"},
+            {"id": "B", "text": "one two"},
+            {"id": "C", "text": "three four\x85five"},
+            {"id": "D", "text": "last"}]
+    text = "\n".join(_json.dumps(r, ensure_ascii=False) for r in recs) + "\n"
+    segs = ingest.read_jsonl(text, ingest.ReaderOpts(text_field="text", id_field="id"))
+    assert [s.record_id for s in segs] == ["A", "B", "C", "D"]
+    assert [s.units[0].start_line for s in segs] == [1, 2, 3, 4]
+    assert segs[1].units[0].text == "one two"  # content kept verbatim
+
+
+def test_unicode_line_separators_do_not_shift_line_numbers():
+    segs = ingest.read_code("alpha beta\n\ngamma")
+    units = [(u.text, u.start_line, u.end_line) for s in segs for u in s.units]
+    assert units == [("alpha beta", 1, 1), ("gamma", 3, 3)]
+    md = ingest.read_markdown("# T\n\npara one\n\n## S\n\npara two\n")
+    all_units = [(u.text, u.start_line) for s in md for u in s.units]
+    assert ("para one", 3) in all_units
+    assert ("para two", 7) in all_units
