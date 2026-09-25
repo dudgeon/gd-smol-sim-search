@@ -22,7 +22,9 @@ SEM="<this skill's base directory>/bin/sem"   # e.g. ~/.claude/skills/smol-sim-s
 Run `"$SEM" doctor` once. If it prints `PROBLEMS FOUND` or exits non-zero,
 show the problems to the user and stop. Don't try to fix sandbox settings,
 install packages or copy models yourself. The fix is for the user to run
-`./setup.sh` in their own terminal.
+`./setup.sh` in their own terminal. The same goes for updates: `sem` has no
+self-update (it can never use the network); the user runs `git pull` and
+`./setup.sh` in their clone — `doctor` prints the exact command.
 
 ## 2. Workflow
 

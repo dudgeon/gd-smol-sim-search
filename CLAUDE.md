@@ -41,6 +41,9 @@ tests/                           pytest; fixtures/ is the golden dataset
 - **Keep every vendored file under 50 MB** (GitHub warns at 50 MB and rejects at 100 MB). No Git LFS: a plain clone
   must work. `build_vendor.py` splits large files (`split_mb`), and `setup.sh` joins them.
 - **Runtime writes only under `$SEM_HOME` (`./.sem`).** Never write to the skill dir, the runtime dir or `~`.
+- **Updates flow only through the clone.** There is no self-updater and never should be: the skill cannot use
+  the network, so `git pull` + `./setup.sh` is the whole update story. `setup.sh` records `source_repo` and
+  `source_commit` in `install.json` so `sem doctor` can point users at the right clone.
 - **No network at runtime.** `cli.main()` installs a socket guard — but that only covers Python. onnxruntime's
   macOS wheel embeds Microsoft 1DS telemetry in native code (it POSTed to mobile.events.data.microsoft.com and
   wrote `~/Library/Caches/python3/` during indexing, observed on macOS 26 / ORT 1.30). `ORT_DISABLE_TELEMETRY=1`

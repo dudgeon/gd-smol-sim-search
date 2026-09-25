@@ -248,11 +248,12 @@ fi
 
 # --- 7. install.json --------------------------------------------------------------
 step "Recording install"
-"$PY" -I - "$RUNTIME_DIR" "$SKILL_DEST" "$MODE" "$VENDOR_STAMP" <<'EOF'
+SOURCE_COMMIT="$(git -C "$REPO_DIR" rev-parse --short HEAD 2>/dev/null || echo unknown)"
+"$PY" -I - "$RUNTIME_DIR" "$SKILL_DEST" "$MODE" "$VENDOR_STAMP" "$REPO_DIR" "$SOURCE_COMMIT" <<'EOF'
 import json, sys, time
 from importlib import metadata
 from pathlib import Path
-rt, skill, mode, stamp = sys.argv[1:5]
+rt, skill, mode, stamp, source_repo, source_commit = sys.argv[1:7]
 rtp = Path(rt)
 f = rtp / "install.json"
 old = json.loads(f.read_text()) if f.exists() else {}
@@ -269,6 +270,8 @@ info = {
     "skill_dir": skill,
     "runtime_dir": rt,
     "vendor_sha256sums": stamp,
+    "source_repo": source_repo,
+    "source_commit": source_commit,
     "python": sys.version.split()[0],
     "packages": {p: metadata.version(p) for p in ("onnxruntime", "tokenizers", "numpy", "pypdf")},
     "models": models,

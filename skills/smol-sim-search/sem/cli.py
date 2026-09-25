@@ -160,8 +160,11 @@ def cmd_doctor(ctx: Ctx) -> tuple[dict, str, int]:
         "problems": problems,
         "warnings": warnings,
     }
+    src = info.get("source_repo")
     lines = [f"sem {__version__} — {'OK' if not problems else 'PROBLEMS FOUND'}",
              f"  runtime:   {rt}",
+             *([f"  installed: from {src} @ {info.get('source_commit', '?')} on {info.get('verified', '?')[:10]}",
+                f"  update:    git -C {src} pull && {src}/setup.sh"] if src else []),
              f"  python:    {out['python']}   onnxruntime {pkgs['onnxruntime']}   tokenizers {pkgs['tokenizers']}",
              f"  models:    " + (", ".join(f"{k}@{v['revision'][:10]}" for k, v in models.items()) or "none"),
              f"  default:   {dflt}",

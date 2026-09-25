@@ -73,10 +73,29 @@ Re-running it only verifies what's installed. It doesn't modify `~/.claude/setti
 
 | Flag | Effect |
 |---|---|
-| `--update` | Reinstall the runtime and skill files from `vendor/` (e.g. after `git pull`). |
+| `--update` | Force-refresh the runtime and skill files from `vendor/` even when they look up to date. |
 | `--link` | Dev mode: symlink the skill to this repo. The runtime goes to `~/.local/share/smol-sim-search/runtime`. |
 | `--runtime-dir DIR` | Put the runtime (Python, packages, model) somewhere else. |
 | `--uninstall [--yes]` | Remove the skill and runtime after confirmation. Project `./.sem/` folders are left alone. |
+
+## Updating
+
+The clone is the distribution, so updating is a `git pull` — never a download by the tool itself:
+
+```bash
+cd gd-smol-sim-search
+git pull
+./setup.sh        # refreshes only what changed; --update forces a full refresh
+```
+
+- **There is deliberately no self-updater.** `sem` refuses all network access at runtime, so an installed copy
+  cannot fetch anything — updates always flow through the clone, in your own terminal.
+- `setup.sh` is idempotent: after a pull it re-verifies `vendor/` and refreshes exactly what changed (the
+  runtime when the vendored files changed, the skill files when they differ). A no-op re-run takes seconds.
+- `sem doctor` shows which clone and commit an install came from, and prints the update command.
+- Deleted the clone? Re-clone and run `./setup.sh` — your projects' `./.sem/` indexes are untouched either way.
+- If an update pins a **new model revision**, existing indexes refuse to load until you `sem index --rebuild`.
+  That's intentional: vectors from different model revisions must never mix.
 
 ## How it stays inside the sandbox
 
