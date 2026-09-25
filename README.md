@@ -34,6 +34,9 @@ its own. It covers two kinds of question:
 - "how similar are these two specs, and which sections overlap?"
 - "what else in the repo is most related to this file?"
 
+You can also invoke it explicitly: `/smol-sim-search guide` gives a tour and offers to index the current
+repo; `/smol-sim-search index` indexes it; `/smol-sim-search <any question>` answers it.
+
 Works over Markdown, plain text, source code, CSV/TSV, JSON/JSONL (one record per item) and PDF. The worked
 workflows behind the analysis questions are in
 [`skills/smol-sim-search/references/recipes.md`](skills/smol-sim-search/references/recipes.md).

@@ -17,6 +17,21 @@ SEM="<this skill's base directory>/bin/sem"   # e.g. ~/.claude/skills/smol-sim-s
 "$SEM" doctor
 ```
 
+## 0. Invocation arguments
+
+When the user invokes `/smol-sim-search <args>`, interpret args as:
+
+- **nothing, or `guide`** — give a short tour: the two kinds of question it
+  answers (search by meaning; similarity analysis — one example phrasing of
+  each from the table in §4), run `doctor`, say whether this project already
+  has an index (`list`), and offer to index the repo. Keep it brief.
+- **`index [paths…]`** — index the given paths (default `.`, the whole repo;
+  the built-in excludes and `.gitignore` keep noise out). Report what was
+  indexed, then suggest two or three questions that fit this corpus.
+- **anything else** — it's the task itself: pick the command from §4
+  (a free-text question is usually `search`; "duplicates" → `dupes`;
+  "themes" → `cluster`; and so on) and answer from the results.
+
 ## 1. First use in a project
 
 Run `"$SEM" doctor` once. If it prints `PROBLEMS FOUND` or exits non-zero,
