@@ -11,12 +11,12 @@ for line in open(os.path.expanduser("~/repos/gd-smol-sim-search/.env")):
         KEY = line.split("=", 1)[1].strip()
 
 SECTIONS = [
- ("hook",     "Keyword search only finds the words you already typed."),
+ ("hook",     "Coding agents burn tokens grepping your repo. And exploring your data? Even harder."),
  ("meet",     "Meet smol-sim-search. Tiny crab, big brain."),
  ("setup",    "Clone it, run setup once. That's the only download."),
  ("skill",    "Then just use the skill: it indexes your folder, searches by meaning, and hands the best matches to your agent."),
  ("analytics","Or just say: cluster these! ...which one's the odd one out?"),
- ("outro",    "All local. All offline. smol-sim-search — ask better questions."),
+ ("outro",    "smol-sim-search: one skill to unlock semantic search, and analysis."),
 ]
 
 SYSTEM = ("You are a professional voice actor recording a scripted voiceover for a short, playful product video. "
@@ -68,7 +68,7 @@ def wav_params(b):
     w = wave.open(io.BytesIO(b))
     return w.getframerate(), w.getnchannels(), w.getsampwidth(), w.getnframes()
 
-GAP, LEAD, TAIL = 0.22, 0.30, 1.00
+GAP, LEAD, TAIL = 0.22, 1.60, 1.00
 timings, clips = [], []
 for name, text in SECTIONS:
     path = os.path.join(HERE, f"{name}.wav")

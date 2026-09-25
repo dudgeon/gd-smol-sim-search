@@ -57,7 +57,7 @@ workflows behind the analysis questions are in
   <img src="assets/smol-demo-poster.jpg" width="420" alt="▶ Watch the smol-sim-search demo (30s)">
 </a>
 
-<sub><a href="https://github.com/dudgeon/smol-sim-search/raw/main/assets/smol-demo.mp4">▶ Watch the 30-second tour</a> — the problem, the one-time setup, the skill workflow, cluster/outliers, and why it's happy in a sandbox.</sub>
+<sub><a href="https://github.com/dudgeon/smol-sim-search/raw/main/assets/smol-demo.mp4">▶ Watch the tour</a> — why repo search is slow and token-hungry, the one-time setup, the skill workflow, and cluster/outliers analysis.</sub>
 
 </div>
 

@@ -1,35 +1,35 @@
 {
- "total": 29.6,
+ "total": 33.97,
  "sections": [
   {
    "name": "hook",
-   "start": 0.3,
-   "end": 3.75
+   "start": 1.6,
+   "end": 6.86
   },
   {
    "name": "meet",
-   "start": 3.97,
-   "end": 8.1
+   "start": 7.08,
+   "end": 11.21
   },
   {
    "name": "setup",
-   "start": 8.32,
-   "end": 12.33
+   "start": 11.43,
+   "end": 15.44
   },
   {
    "name": "skill",
-   "start": 12.55,
-   "end": 19.72
+   "start": 15.66,
+   "end": 22.82
   },
   {
    "name": "analytics",
-   "start": 19.94,
-   "end": 23.11
+   "start": 23.04,
+   "end": 26.22
   },
   {
    "name": "outro",
-   "start": 23.33,
-   "end": 28.6
+   "start": 26.44,
+   "end": 32.97
   }
  ]
 }

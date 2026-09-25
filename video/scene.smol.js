@@ -90,20 +90,46 @@
     letter(txt, x + size * .55, y + size * .14, size, mixCol(PAL.cream, PAL.teal, .25), { pop: 1, alpha: 255 * al });
   }
 
-  // ============================================================ A: keyword miss (0–3.97)
-  function shotA(t, lt, dur) {
-    camBegin(CX + 8 * Math.sin(lt * .5), CY + 40, 1.15);
-    boilSeed('Abg'); paint(rectPts(-400, -400, W + 800, H + 800), { wash: COOL, ink: null });
-    const sx = kf(lt, [[.6, [1180, 560]], [3.4, [120, 600]]], ease);
-    card(sx[0], sx[1], 150, -.08, 111, { doodle: 'fish', lines: 2 });
-    const mood = emotions(lt, [[0, 'thinking', { lookX: -.5, lookY: -.2 }], [1.6, 'suspicious', { lookX: -.4 }], [2.8, 'confused']]);
-    clawd(560, 900, 42, { ...mood, aR: kf(lt, [[0, .5], [.7, 1.0]], ease), armR: lensProp(0), aL: -.4, flip: true });
-    card(760, 560 + mood.dy * 4 + 8 * Math.sin(lt * 1.7), 120, .1, 120, { doodle: 'fish', lines: 2 });
+  // ============================================================ TITLE (0–1.6) — the thumbnail
+  function shotTitle(t, lt, dur) {
+    camBegin(CX, CY, 1.05);
+    // warm striking ground + a soft sunburst of rays behind Clawd
+    boilSeed('tbg'); paint(rectPts(-400, -400, W + 800, H + 800), { wash: WARM, ink: null });
+    paint(ellPts(CX, 470, 760, 520, 28, 8), { fill: PAL.rose, fillOp: 46, bleed: .25, tex: .5, ink: null });
+    boilSeed('rays'); for (let i = 0; i < 14; i++) { const a = i / 14 * TAU + lt * .15, r0 = 150, r1 = 760;
+      inkLine([[CX + Math.cos(a) * r0, 560 + Math.sin(a) * r0], [CX + Math.cos(a) * r1, 560 + Math.sin(a) * r1]], 20, mixCol(PAL.cream, PAL.ochre, .4), 'dry', 0); }
+    paint(rectPts(-400, -400, W + 800, H + 800), { wash: WARM, washOp: 120, ink: null });   // veil the rays back
+    for (let i = 0; i < 12; i++) { boilSeed('tspk' + i); const a = hash(i) * TAU, r = 300 + hash(i + 5) * 220, tw = .5 + .5 * Math.sin(lt * 3 + i * 2); paint(starPts(CX + Math.cos(a) * r, 560 + Math.sin(a) * r * .8, (6 + 6 * hash(i + 2)) * tw, .4, 4), { wash: FAM[i % 3], washOp: 200 * tw, ink: null }); }
+    // Clawd, front, holding the lens up proudly — the logo pose (fully composed at t=0)
+    const bob = 5 * Math.sin(lt * 2.2 + 1);
+    clawd(CX, 940, 50, { ...feel('proud', t + .3), dy: -.2 + bob * .02, aR: 1.15 + .05 * Math.sin(lt * 3), armR: lensProp(1), aL: -.35, lookY: -.1 });
     camEnd();
-    boom('KEYWORD', CX, 220, 110, PAL.cream, PAL.clay, lt, .3, 0, { rot: -.05, burst: true });
-    call('finds only exact words', CX, 350, 46, PAL.ink, lt, 1.1, 0, { rot: .01 });
-    if (lt < .3) iris(560, 700, lerp(0, 1400, easeIn(lt / .3)), PAL.paper);
-    if (lt > dur - .28) brushWipe((lt - (dur - .28)) / .56, [PAL.clay, PAL.rose]);
+    // big title, present from the first frame (only a gentle beat wobble)
+    boom('smol-sim-search', CX, 250, 78, PAL.cream, PAL.clay, lt, -1, 0, { rot: -.03, beat: 1 });
+    call('semantic search, for your agent', CX, 350, 40, mixCol(PAL.ink, PAL.cream, .12), lt, .2, 0, { rot: 0 });
+    if (lt > dur - .28) brushWipe((lt - (dur - .28)) / .56, [PAL.clay, PAL.indigo]);
+  }
+
+  // ============================================================ A: the problem (1.6–7.08)
+  function shotA(t, lt, dur) {
+    camBegin(CX + 8 * Math.sin(lt * .5), CY, 1.06);
+    boilSeed('Abg'); paint(rectPts(-400, -400, W + 800, H + 800), { wash: mixCol(PAL.indigo, PAL.sky, .4), ink: null });
+    // an agent (terminal glyph) frantically riffling a tall pile of cards; tokens burn off as embers
+    boilSeed('agentA'); push(); translate(300, 560); const bz = 1 + .03 * Math.sin(lt * 20);
+    paint(rrPts(-72, -72, 144, 144, 24, 2), { wash: TERM, ink: PAL.ink, sw: 2.5 });
+    paint(starPts(0, -4, 34 * bz, .45, 4, .2), { wash: mixCol(PAL.cream, PAL.teal, .3), ink: null }); pop();
+    for (let i = 0; i < 6; i++) { boilSeed('pcard' + i); const fl = frac(lt * 1.6 + i / 6); const x = 640 + Math.sin((i + lt) * 2) * 20, y = 720 - fl * 320; card(x, y, 120, (fl - .5) * .5, 200 + i, { lines: 3 }); }
+    // burning tokens: embers rising with $ sparks
+    for (let i = 0; i < 10; i++) { boilSeed('ember' + i); const k = frac(lt * .8 + hash(i)); const x = 430 + hash(i) * 120, y = 560 - k * 380; glow(x, y, 26 * (1 - k), PAL.ochre, .5 * (1 - k)); paint(starPts(x, y, 7 * (1 - k), .4, 5), { wash: mixCol(PAL.ochre, PAL.rose, .3), washOp: 220 * (1 - k), ink: null }); }
+    const mood = emotions(lt, [[0, 'nervous', { lookX: .3 }], [2.4, 'gloom' in EMO ? 'sad' : 'sad', { lookX: .2 }], [4.0, 'confused']]);
+    clawd(560, 1010, 26, { ...mood, gloom: .4 });
+    camEnd();
+    boom('TOKEN-HUNGRY', CX, 200, 80, PAL.cream, PAL.rose, lt, .3, 3.6, { rot: -.05, burst: true });
+    call('agents grep your whole repo', CX, 300, 44, PAL.cream, lt, 1.2, 3.6, { rot: .01 });
+    boom('patterns? HIDDEN', CX, 220, 76, PAL.cream, PAL.violet, lt, 3.9, 0, { rot: .04, burst: true });
+    call('exploring your data is worse', CX, 320, 44, PAL.cream, lt, 4.6, 0, { rot: 0 });
+    if (lt < .28) brushWipe(.5 + lt / .56, [PAL.clay, PAL.indigo]);
+    if (lt > dur - .28) brushWipe((lt - (dur - .28)) / .56, [PAL.indigo, PAL.rose]);
   }
 
   // ============================================================ B: meet (3.97–8.32)
@@ -116,10 +142,10 @@
     const mood = emotions(lt, [[0, 'surprised'], [.7, 'excited'], [2.4, 'proud', { emote: 'bulb' }], [3.6, 'happy']]);
     clawd(CX, 940, 48, { ...mood, dy: mood.dy + hop.dy, sq: mood.sq + hop.sq, aR: kf(lt, [[2.2, .3], [2.8, 1.2]], backOut), armR: lensProp(seg(lt, 2.9, 4.0)) });
     camEnd();
-    boom('smol-sim-search', CX, 250, 66, PAL.cream, PAL.clay, lt, .3, 0, { rot: -.03, beat: 1 });
-    call('tiny crab.', 300, 640, 58, PAL.teal, lt, 2.3, 0, { rot: -.06 });
-    call('BIG BRAIN.', 800, 700, 64, PAL.ochre, lt, 3.0, 0, { rot: .06 });
-    if (lt < .28) brushWipe(.5 + lt / .56, [PAL.clay, PAL.rose]);
+    boom('meet smol-sim-search', CX, 240, 60, PAL.cream, PAL.clay, lt, .3, 0, { rot: -.03, beat: 1 });
+    call('tiny crab.', 300, 650, 60, PAL.teal, lt, 2.1, 0, { rot: -.06 });
+    call('BIG BRAIN.', 800, 710, 66, PAL.ochre, lt, 2.8, 0, { rot: .06 });
+    if (lt < .28) brushWipe(.5 + lt / .56, [PAL.indigo, PAL.rose]);
     if (lt > dur - .28) brushWipe((lt - (dur - .28)) / .56, [PAL.teal, TERM]);
   }
 
@@ -206,13 +232,14 @@
     sandboxFrame();
     camEnd();
     boom('100% OFFLINE', CX, 250, 70, PAL.cream, PAL.teal, lt, .9, 2.6, { rot: -.03 });
-    const fade = 1 - seg(lt, 5.6, 6.4);
-    boom('smol-sim-search', CX, 330, 60, PAL.cream, PAL.clay, lt, 3.0, 0, { rot: -.02, beat: 1 });
-    if (lt > 3.9 && fade > 0) letter('ask better questions.', CX, 425, 42, mixCol(PAL.cream, PAL.teal, .45), { pop: ease(seg(lt, 3.9, 4.6)), alpha: 220 * seg(lt, 3.9, 4.6) * fade });
+    const fade = 1 - seg(lt, 6.6, 7.4);
+    boom('smol-sim-search', CX, 320, 58, PAL.cream, PAL.clay, lt, 3.0, 0, { rot: -.02, beat: 1 });
+    if (lt > 3.9 && fade > 0) { letter('one skill:', CX, 410, 44, mixCol(PAL.cream, PAL.teal, .5), { pop: ease(seg(lt, 3.9, 4.5)), alpha: 235 * seg(lt, 3.9, 4.5) * fade });
+      letter('semantic search + analysis', CX, 470, 42, PAL.cream, { pop: ease(seg(lt, 4.3, 5.0)), alpha: 235 * seg(lt, 4.3, 5.0) * fade }); }
     flushLetters();
     if (lt < .28) brushWipe(.5 + lt / .56, [PAL.night, SAND]);
-    const ir = seg(lt, 6.0, 6.9); if (ir > 0) iris(CX, 720, lerp(1500, 0, ease(ir)), PAL.night);
+    const ir = seg(lt, 6.8, 7.5); if (ir > 0) iris(CX, 720, lerp(1500, 0, ease(ir)), PAL.night);
   }
 
-  shots([[0, shotA], [3.97, shotB], [8.32, shotC], [12.55, shotD], [19.94, shotE], [23.33, shotF]]);
+  shots([[0, shotTitle], [1.6, shotA], [7.08, shotB], [11.43, shotC], [15.66, shotD], [23.04, shotE], [26.44, shotF]]);
 })();
