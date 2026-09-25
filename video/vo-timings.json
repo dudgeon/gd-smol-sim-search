@@ -1,0 +1,50 @@
+{
+ "total": 100.25,
+ "sections": [
+  {
+   "name": "hook",
+   "start": 0.5,
+   "end": 13.7
+  },
+  {
+   "name": "meet",
+   "start": 14.15,
+   "end": 24.65
+  },
+  {
+   "name": "install",
+   "start": 25.1,
+   "end": 37.95
+  },
+  {
+   "name": "anyrepo",
+   "start": 38.4,
+   "end": 49.2
+  },
+  {
+   "name": "how",
+   "start": 49.65,
+   "end": 61.4
+  },
+  {
+   "name": "why",
+   "start": 61.85,
+   "end": 69.3
+  },
+  {
+   "name": "cluster",
+   "start": 69.75,
+   "end": 80.45
+  },
+  {
+   "name": "sandbox",
+   "start": 80.9,
+   "end": 92.45
+  },
+  {
+   "name": "outro",
+   "start": 92.9,
+   "end": 98.65
+  }
+ ]
+}
