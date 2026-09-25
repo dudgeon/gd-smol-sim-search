@@ -48,7 +48,9 @@ self-update (it can never use the network); the user runs `git pull` and
    is cheap.
 2. **Query or analyse** with `--json` and parse the result. Progress and logs
    go to stderr; stdout holds exactly one JSON document. Every JSON document
-   has `ok` and `command`; on failure it has `error`.
+   has `ok` and `command`; on failure it has `error`. If a query fails with
+   "no index", index first (default `.` in a repo), then rerun the query —
+   don't hand the error to the user.
 3. Use `--index <name>` to keep separate corpora apart (default `default`).
 
 ## 2a. Record data (CSV / TSV / JSONL / JSON arrays)
@@ -127,11 +129,12 @@ corpus median (`outliers` reports it). Dupe thresholds default per model. See
 
 ## 7. Stale indexes
 
-Before answering from an index, run `"$SEM" index <same paths> --json` again
-if files may have changed. Only changed files are re-embedded (see `changed`
-and `chunks_embedded` in the output). An index is tied to one model: querying
-with a different model fails on purpose. Use a new `--index` name or
-`--rebuild`.
+Before answering from an index, re-run `"$SEM" index <roots> --json` whenever
+files may have changed — the session edited files, the user mentions new data,
+or you simply don't know. Re-run freely: only changed files are re-embedded and
+a no-op pass is sub-second. The index's original roots are in `info --json`
+(`roots`). An index is tied to one model: querying with a different model fails
+on purpose. Use a new `--index` name or `--rebuild`.
 
 ## Examples
 
