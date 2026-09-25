@@ -7,3 +7,5 @@ skills/smol-sim-search/.runtime-path
 # never commit a runtime (venv, Python, model weights) into the repo
 runtime/
 .venv-dev/
+# local secrets (API keys); never committed
+.env
