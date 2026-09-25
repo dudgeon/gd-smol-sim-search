@@ -34,8 +34,14 @@ its own. It covers two kinds of question:
 - "how similar are these two specs, and which sections overlap?"
 - "what else in the repo is most related to this file?"
 
-You can also invoke it explicitly: `/smol-sim-search guide` gives a tour and offers to index the current
-repo; `/smol-sim-search index` indexes it; `/smol-sim-search <any question>` answers it.
+**There is no indexing step to remember.** Ask a question and Claude indexes what's needed on the first
+query, then keeps the index fresh: re-indexing is incremental (files are checked by size/mtime, then content
+hash — only actual diffs since the last index are re-embedded, so a no-op refresh is sub-second). Explicitly
+invoking `/smol-sim-search index` is optional — a pre-warm so the first real question answers instantly.
+`/smol-sim-search guide` gives a tour; `/smol-sim-search <any question>` just answers it.
+
+Indexes live in `./.sem/` inside the project, which writes its own catch-all `.gitignore` on creation — they
+are never committed, and deleting `./.sem/` is always safe (it's a cache; the next question rebuilds it).
 
 Works over Markdown, plain text, source code, CSV/TSV, JSON/JSONL (one record per item) and PDF. The worked
 workflows behind the analysis questions are in
@@ -119,7 +125,9 @@ Claude runs it for you, but `sem` also works on its own:
 ```bash
 SEM=~/.claude/skills/smol-sim-search/bin/sem
 $SEM doctor
-$SEM index docs/ src/                        # incremental: only changed files are re-embedded
+$SEM index docs/ src/                        # optional pre-warm; queries auto-index what they need
+                                             # incremental: only files that changed since the last index
+                                             # are re-embedded (size/mtime check, then content hash)
 $SEM search "how do we retry failed uploads" -k 5
 $SEM similar src/upload/retry.py --group-by-file
 $SEM compare docs/a.md docs/b.md             # plus the best-matching chunk pairs
