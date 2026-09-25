@@ -47,6 +47,20 @@ Works over Markdown, plain text, source code, CSV/TSV, JSON/JSONL (one record pe
 workflows behind the analysis questions are in
 [`skills/smol-sim-search/references/recipes.md`](skills/smol-sim-search/references/recipes.md).
 
+## See it in action
+
+<div align="center">
+
+<video src="https://github.com/dudgeon/smol-sim-search/raw/main/assets/smol-demo.mp4" poster="assets/smol-demo-poster.jpg" controls muted playsinline width="720"></video>
+
+<a href="https://github.com/dudgeon/smol-sim-search/raw/main/assets/smol-demo.mp4">
+  <img src="assets/smol-demo-poster.jpg" width="640" alt="▶ Watch the smol-sim-search demo (1m40s)">
+</a>
+
+<sub><a href="https://github.com/dudgeon/smol-sim-search/raw/main/assets/smol-demo.mp4">▶ Watch the 100-second tour</a> — the problem, install, search, similarity, clustering, and why it's happy in a sandbox.</sub>
+
+</div>
+
 ## Requirements
 
 - macOS **14 (Sonoma) or later** on **Apple Silicon**. The vendored onnxruntime and numpy wheels need macOS 14.
