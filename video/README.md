@@ -8,10 +8,13 @@
    (streaming PCM), trims each clip, and concatenates them with gaps into `voiceover.wav`, writing the measured
    per-section timings to [`vo-timings.json`](vo-timings.json). Needs `OPENROUTER_API_KEY` (kept in the repo-root
    `.env`, which is gitignored).
-2. **Storyboard** — [`STORYBOARD.md`](STORYBOARD.md): nine shots timed to the voiceover, one read at a time.
-3. **Animation** — [`scene.smol.js`](scene.smol.js) is a [ClaudeAnimationBase](https://github.com/JohnHeibel/ClaudeAnimationBase)
+2. **Music** — [`gen_music.py`](gen_music.py) generates a bouncy instrumental with OpenRouter's `google/lyria-3-pro-preview`
+   (which returns MP3), cuts a ~47 s bed with fades, then mixes it **under** the voiceover with sidechain ducking →
+   `voiceover_music.wav` (the video's audio track).
+3. **Storyboard** — [`STORYBOARD.md`](STORYBOARD.md): seven shots timed to the voiceover, one read at a time.
+4. **Animation** — [`scene.smol.js`](scene.smol.js) is a [ClaudeAnimationBase](https://github.com/JohnHeibel/ClaudeAnimationBase)
    scene (p5.js + p5.brush), starring Clawd. Every frame is a pure function of time; the linework boils.
-4. **Render** — frames → MP4 with the voiceover muxed in, then a 720p web pass (~7 MB).
+5. **Render** — frames → MP4 with the voiceover muxed in, then a 720p web pass (~7 MB).
 
 ## Rebuild
 
@@ -22,7 +25,7 @@ cp ../smol-sim-search/video/gen_vo.py vo/gen_vo.py && python3 vo/gen_vo.py      
 # set PROJECT = { duration: 100.25, bpm: 96, offset: 0, audio: 'vo/voiceover.wav' } in src/config.js
 # point studio.html's scene <script> at src/scenes/smol.js
 node render.mjs --frames --workers=4
-node render.mjs --encode --out=out/video.mp4 --audio=vo/voiceover.wav   # NB: --encode only muxes audio if --audio is passed
+node render.mjs --encode --out=out/video.mp4 --audio=vo/voiceover_music.wav   # NB: --encode only muxes audio if --audio is passed
 ```
 
 ## Embedding it in the README

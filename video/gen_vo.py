@@ -11,15 +11,13 @@ for line in open(os.path.expanduser("~/repos/gd-smol-sim-search/.env")):
         KEY = line.split("=", 1)[1].strip()
 
 SECTIONS = [
- ("hook",     "This is your repo. Somewhere in here... is the thing you're looking for. The catch? Grep only finds words you already know. Meaning? ...Not grep's department."),
- ("meet",     "Meet smol-sim-search! A search engine so small, it lives right inside your repo — and it finds things by what they mean."),
- ("install",  "Install? One clone. One setup script. No downloads, no dependencies — every last byte ships in the box. Batteries very much included."),
- ("anyrepo",  "Then, in any repo, just ask. First question? It indexes itself. Changed a file? It only re-reads the diff."),
- ("how",      "Under the hood, every chunk of text becomes a point in space. Similar meanings huddle close together. So searching is just... checking the neighborhood."),
- ("why",      "Which means 'charged twice' finds 'billed double'. Same idea, different words. And duplicates? Busted."),
- ("cluster",  "It'll also cluster your data into themes, flag the weird outliers, and map who's related to who. Tiny crab... big analytics."),
- ("sandbox",  "Best part? Fully local. Fully offline. It never phones home — it doesn't even have a phone. Which makes it perfectly happy inside a sandbox."),
- ("outro",    "smol-sim-search. Clone it... and start asking better questions."),
+ ("hook",     "Somewhere in your repo is the thing you need. But grep? Grep only finds the words you already typed."),
+ ("meet",     "So — meet smol-sim-search. Tiny crab. Big brain."),
+ ("how",      "It reads your files by meaning. So \"charged twice\"... finds \"billed double.\" No magic words required."),
+ ("analytics","Duplicates? Busted. Themes? Sorted. Weird stuff? Flagged."),
+ ("install",  "One clone, one script, zero downloads. It's all in the box — batteries, crab, and everything."),
+ ("sandbox",  "And it never phones home. It doesn't even HAVE a phone. So it's perfectly cozy in a sandbox."),
+ ("outro",    "smol-sim-search. Clone it... and ask better questions."),
 ]
 
 SYSTEM = ("You are a professional voice actor recording a scripted voiceover for a short, playful product video. "
@@ -70,7 +68,7 @@ def wav_params(b):
     w = wave.open(io.BytesIO(b))
     return w.getframerate(), w.getnchannels(), w.getsampwidth(), w.getnframes()
 
-GAP, LEAD, TAIL = 0.45, 0.50, 1.60
+GAP, LEAD, TAIL = 0.30, 0.35, 1.20
 timings, clips = [], []
 for name, text in SECTIONS:
     path = os.path.join(HERE, f"{name}.wav")
