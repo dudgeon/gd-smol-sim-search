@@ -11,18 +11,18 @@ for line in open(os.path.expanduser("~/repos/gd-smol-sim-search/.env")):
         KEY = line.split("=", 1)[1].strip()
 
 SECTIONS = [
- ("hook",     "Somewhere in your repo is the thing you need. But grep? Grep only finds the words you already typed."),
- ("meet",     "So — meet smol-sim-search. Tiny crab. Big brain."),
- ("how",      "It reads your files by meaning. So \"charged twice\"... finds \"billed double.\" No magic words required."),
- ("analytics","Duplicates? Busted. Themes? Sorted. Weird stuff? Flagged."),
- ("install",  "One clone, one script, zero downloads. It's all in the box — batteries, crab, and everything."),
- ("sandbox",  "And it never phones home. It doesn't even HAVE a phone. So it's perfectly cozy in a sandbox."),
- ("outro",    "smol-sim-search. Clone it... and ask better questions."),
+ ("hook",     "Keyword search only finds the words you already typed."),
+ ("meet",     "Meet smol-sim-search. Tiny crab, big brain."),
+ ("setup",    "Clone it, run setup once. That's the only download."),
+ ("skill",    "Then just use the skill: it indexes your folder, searches by meaning, and hands the best matches to your agent."),
+ ("analytics","Or just say: cluster these! ...which one's the odd one out?"),
+ ("outro",    "All local. All offline. smol-sim-search — ask better questions."),
 ]
 
 SYSTEM = ("You are a professional voice actor recording a scripted voiceover for a short, playful product video. "
           "Speak the user's script EXACTLY as written, verbatim — no greetings, no additions, no rewording. "
           "Begin the script IMMEDIATELY: never acknowledge these instructions, never say 'Understood' or 'Here we go'. "
+          "This is a developer-tool voiceover, NOT a consumer ad: never invent product names, taglines, or ad copy. Read ONLY the exact words given, nothing else. "
           "Tone: warm, cheerful, lighthearted documentary narrator with a smile in the voice; upbeat but clear; "
           "medium-brisk pace with the comic pauses the ellipses suggest.")
 
@@ -68,7 +68,7 @@ def wav_params(b):
     w = wave.open(io.BytesIO(b))
     return w.getframerate(), w.getnchannels(), w.getsampwidth(), w.getnframes()
 
-GAP, LEAD, TAIL = 0.30, 0.35, 1.20
+GAP, LEAD, TAIL = 0.22, 0.30, 1.00
 timings, clips = [], []
 for name, text in SECTIONS:
     path = os.path.join(HERE, f"{name}.wav")

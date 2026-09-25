@@ -51,13 +51,13 @@ workflows behind the analysis questions are in
 
 <div align="center">
 
-<video src="https://github.com/dudgeon/smol-sim-search/raw/main/assets/smol-demo.mp4" poster="assets/smol-demo-poster.jpg" controls muted playsinline width="720"></video>
+<video src="https://github.com/dudgeon/smol-sim-search/raw/main/assets/smol-demo.mp4" poster="assets/smol-demo-poster.jpg" controls muted playsinline width="420"></video>
 
 <a href="https://github.com/dudgeon/smol-sim-search/raw/main/assets/smol-demo.mp4">
-  <img src="assets/smol-demo-poster.jpg" width="640" alt="▶ Watch the smol-sim-search demo (1m40s)">
+  <img src="assets/smol-demo-poster.jpg" width="420" alt="▶ Watch the smol-sim-search demo (30s)">
 </a>
 
-<sub><a href="https://github.com/dudgeon/smol-sim-search/raw/main/assets/smol-demo.mp4">▶ Watch the 100-second tour</a> — the problem, install, search, similarity, clustering, and why it's happy in a sandbox.</sub>
+<sub><a href="https://github.com/dudgeon/smol-sim-search/raw/main/assets/smol-demo.mp4">▶ Watch the 30-second tour</a> — the problem, the one-time setup, the skill workflow, cluster/outliers, and why it's happy in a sandbox.</sub>
 
 </div>
 

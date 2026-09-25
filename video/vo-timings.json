@@ -1,40 +1,35 @@
 {
- "total": 46.35,
+ "total": 29.6,
  "sections": [
   {
    "name": "hook",
-   "start": 0.35,
-   "end": 6.26
+   "start": 0.3,
+   "end": 3.75
   },
   {
    "name": "meet",
-   "start": 6.56,
-   "end": 11.66
+   "start": 3.97,
+   "end": 8.1
   },
   {
-   "name": "how",
-   "start": 11.96,
-   "end": 19.8
+   "name": "setup",
+   "start": 8.32,
+   "end": 12.33
+  },
+  {
+   "name": "skill",
+   "start": 12.55,
+   "end": 19.72
   },
   {
    "name": "analytics",
-   "start": 20.1,
-   "end": 25.63
-  },
-  {
-   "name": "install",
-   "start": 25.93,
-   "end": 33.1
-  },
-  {
-   "name": "sandbox",
-   "start": 33.4,
-   "end": 40.14
+   "start": 19.94,
+   "end": 23.11
   },
   {
    "name": "outro",
-   "start": 40.44,
-   "end": 45.15
+   "start": 23.33,
+   "end": 28.6
   }
  ]
 }
